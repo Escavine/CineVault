@@ -4,7 +4,7 @@
 #include <curl/curl.h> // API usage
 #include <sqlite3.h> // Database usage
 #include <chrono>
-
+#include <string>
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) // for cURL API usage
 {
@@ -25,11 +25,37 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 
 // void isLoggedin() ASSUMING THE USER HAS AN ACCOUNT IN THE DATABASE, THEY CAN LOGIN
 
-// void signUp () NEW USERS WILL BE REDIRECTED TO THIS FUNCTION
+void signUp() // new users will be redirected to this function
+{
+    sqlite3_stmt* stmt;
+    sqlite3* db;
+    std::string firstName, lastName, un, pw;
+    int age;
+
+    const char* query = "INSERT INTO users (individualName, individualSurname, individualAge, username, password) VALUES (?, ?, ?, ?, ?)";
+    int rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr); // needs to be fixed
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Intialization of statement has failed! " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "Statement initialization is a success! " << std::endl; // testing measure will be removed once confirmed
+    }
+
+    std::cout << "Sign-up form \n" << std::endl;
+
+    std::cout << "What is your name?" << std::endl;
+    std::cin >> firstName;
+
+    rc = sqlite3_bind_text(stmt, 1, firstName.c_str(), -1, SQLITE_STATIC);
+
+ 
            // Append the signup details to the users database to allow for them to login         
           // Create a user movie watchlist database to store the information of the movie/movies along with the given movie name for signUp function
           // The user movie watchlist database has to consist of (userID as a foreign key, watchStatus as a TEXT which can only hold WATCHED, WATCHING, DROPPED ETC, movieInfo and movieName)
-
+}
 
 int main() {
     CURL* curl;
@@ -77,7 +103,14 @@ int main() {
     std::cout << "Enter your choice: ";
     std::cin >> userChoice;
 
-    // Add logic to handle user choice (login or sign-up)
+    switch (userChoice)
+        case '1' 
+    {
+        std::cout << "You will be redirected to the login form... \n";
+
+    }
+
+
 
     // Cleanup libcurl
     curl_global_cleanup();
