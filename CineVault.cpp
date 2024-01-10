@@ -105,8 +105,7 @@ void signUp(int userChoice) // new users will be redirected to this function
     if (result == SQLITE_DONE)
     {
         std::cout << "Sign up success!" << std::endl;
-        choice(); // redirect the user to the choice function
-     }
+    }
     else
     {
         std::cerr << "Database integration for signing up has failed " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
@@ -118,13 +117,13 @@ void signUp(int userChoice) // new users will be redirected to this function
 }
 
 
-void static choice() {
+void choice() {
     // Handle user input
     int userChoice;
     int userAttempts = 3;
     std::cout << "CineVault - Movie Search and Collections App\n" << std::endl;
     std::cout << "1. Login (NOT WORKING)" << std::endl;
-    std::cout << "2. Sign-Up (IN DEVELOPMENT)" << std::endl;
+    std::cout << "2. Sign-Up" << std::endl;
 
     std::cout << "Enter your choice: ";
     std::cin >> userChoice;
@@ -136,7 +135,7 @@ void static choice() {
     }
     case 2: {
         std::cout << "You will be redirected to the sign-up form...\n";
-        signUp(userChoice); // leads user to sign up form
+        signUp(userChoice); // leads user to sign up form with the open database connection
         break;
     }
     default: {
@@ -155,15 +154,16 @@ int main() {
     CURL* curl;
     CURLcode res;
     sqlite3* db;
+    std::string userChoice;
 
     int rc = sqlite3_open("users.db", &db);
 
-    if (rc != SQLITE_OK) 
+    if (rc != SQLITE_OK)
     {
         std::cerr << "Database failed to open\n" << std::endl;
         return rc;
     }
-    else 
+    else
     {
         std::cout << "Database opened successfully\n" << std::endl;
     }
@@ -172,21 +172,26 @@ int main() {
     const char* createTable = "CREATE TABLE IF NOT EXISTS users (userID INTEGER PRIMARY KEY NOT NULL, individualName TEXT, individualSurname TEXT, email TEXT, individualAge INTEGER, username TEXT, password TEXT)";
     rc = sqlite3_exec(db, createTable, 0, 0, 0);
 
-    if (rc != SQLITE_OK) 
+    if (rc != SQLITE_OK)
     {
         std::cerr << "Failed to create users table. ERROR CODE: " << sqlite3_errcode(db) << " ERROR DETAILS: " << sqlite3_errmsg(db) << "\n" << std::endl;
     }
-    else 
+    else
     {
         std::cout << "Users table created successfully\n" << std::endl;
     }
 
-    // Close the database connection
-    sqlite3_close(db);
-    choice(); // lead the user to the choice function
+    // Call the choice function with the open database connection
+    choice();
 
+    // Close the database connection after using it in the choice function
+    sqlite3_close(db);
 
     return 0;
 }
+
+
+
+
 
 
