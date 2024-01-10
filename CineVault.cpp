@@ -1,11 +1,12 @@
 // CineVault: Movie Search and Collection App
 
 #include <iostream>
-#include <curl/curl.h>
-#include <sqlite3.h>
+#include <curl/curl.h> // API usage
+#include <sqlite3.h> // Database usage
+#include <chrono>
 
 
-size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output)
+size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) // for cURL API usage
 {
     size_t totalSize = size * nmemb;
     output->append((char*)contents, totalSize);
@@ -15,7 +16,9 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 
 // void addMovies() THIS WILL ADD MOVIES TO ONES COLLECTION
     // Utilise CURL code here
-
+    // curl_global_init(CURL_GLOBAL_DEFAULT);
+    // curl = curl_easy_init();
+    // if (curl)
 
 // void searchMovies() THIS WILL ALLOW THE USER TO SEARCH FOR MOVIES
     // Utilise CURL code here
@@ -28,56 +31,58 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
           // The user movie watchlist database has to consist of (userID as a foreign key, watchStatus as a TEXT which can only hold WATCHED, WATCHING, DROPPED ETC, movieInfo and movieName)
 
 
-
-
-
-int main()
-{
+int main() {
     CURL* curl;
     CURLcode res;
-    sqlite3* db;
-    sqlite3_stmt* stmt;
-    int rc; // return code for SQL statements
 
-
-    
-    // Create a users database that'll consist of a username and password for individuals that already exist within the database
-    // INSERT SQL CODE HERE
-
-    const char* createTable = "CREATE TABLE IF NOT EXISTS users (userID INTEGER PRIMARY KEY NOT NULL, individualName TEXT, individualSurname TEXT, individualAge INTEGER, username TEXT, password TEXT)";
-
-    rc = sqlite3_exec(db, createTable, 0, 0, 0);
-
-    if (rc != SQLITE_OK)
-    {
-        std::cerr << "Database has failed to be created " << "ERROR CODE: " << sqlite
-    }
-
-    rc = sqlite3_open("users.db", &db);
-
-    if (rc != SQLITE_OK)
-    {
-        std::cerr << "Database does not exist\n" << std::endl;
-    }
-    else
-    {
-        std::cout << "Database has successfully been opened\n" << std::endl; // Testing measure will be removed soon
-    }
-
-
-
+    // Initialize libcurl
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
-    curl = curl_easy_init();
+    // Open or create SQLite database
+    sqlite3* db;
+    int rc = sqlite3_open("users.db", &db);
 
-    if (curl)
+    if (rc != SQLITE_OK) 
     {
-        // Set API for request handling
-
-
+        std::cerr << "Database failed to open\n" << std::endl;
+        return rc;
+    }
+    else 
+    {
+        std::cout << "Database opened successfully\n" << std::endl;
     }
 
+    // Creates users table if it doesn't exist
+    const char* createTable = "CREATE TABLE IF NOT EXISTS users (userID INTEGER PRIMARY KEY NOT NULL, individualName TEXT, individualSurname TEXT, individualAge INTEGER, username TEXT, password TEXT)";
+    rc = sqlite3_exec(db, createTable, 0, 0, 0);
 
+    if (rc != SQLITE_OK) 
+    {
+        std::cerr << "Failed to create users table. ERROR CODE: " << sqlite3_errcode(db) << " ERROR DETAILS: " << sqlite3_errmsg(db) << std::endl;
+    }
+    else 
+    {
+        std::cout << "Users table created successfully\n" << std::endl;
+    }
 
+    // Close the database connection
+    sqlite3_close(db);
+
+    // Handle user input
+    int userChoice;
+    std::cout << "CineVault - Movie Search and Collections App\n" << std::endl;
+    std::cout << "1. Login" << std::endl;
+    std::cout << "2. Sign-Up" << std::endl;
+
+    std::cout << "Enter your choice: ";
+    std::cin >> userChoice;
+
+    // Add logic to handle user choice (login or sign-up)
+
+    // Cleanup libcurl
+    curl_global_cleanup();
+
+    return 0;
 }
+
 
