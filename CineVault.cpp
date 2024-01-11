@@ -28,6 +28,36 @@ void isLoggedin() // Login for existing users
     std::cout << "Hello silly chicken, we haven't developed this section yet :)\n" << std::endl;
     sqlite3_stmt* stmt;
     sqlite3* db;
+    int rc; // return code
+    std::string un, pw; // username and password
+
+    rc = sqlite3_open("users.db", &db);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Error opening database" << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
+    }
+
+    const char* login = "SELECT username, password FROM users WHERE username = ?, password = ?";
+    rc = sqlite3_prepare_v2(db, login, -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Error preparing statement" << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "Statement successfully initialized!\n" << std::endl; // testing measure: will be removed soon
+    }
+
+
+
+
+
 
 
 }
