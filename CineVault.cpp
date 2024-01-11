@@ -54,7 +54,7 @@ void loginSession(int UID, std::string individualName, std::string individualSur
 
 }
 
-void isLoggedin() // Login for existing users 
+void isLoggedin(int userChoice) // Login for existing users 
 {
     sqlite3_stmt* stmt;
     sqlite3* db;
@@ -74,7 +74,7 @@ void isLoggedin() // Login for existing users
         std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
     }
 
-    const char* login = "SELECT username, password FROM users WHERE username = ?, password = ?";
+    const char* login = "SELECT username, password FROM users WHERE username = ? AND password = ?";
     rc = sqlite3_prepare_v2(db, login, -1, &stmt, nullptr);
 
     if (rc != SQLITE_OK)
@@ -104,7 +104,7 @@ void isLoggedin() // Login for existing users
         std::cout << "Statement successfully initialized!\n" << std::endl; // testing measure: will be removed soon
     }
 
-    std::cout << "Loggin in...\n";
+    std::cout << "Logging in...\n";
 
     int result = sqlite3_step(stmt);
 
@@ -121,7 +121,7 @@ void isLoggedin() // Login for existing users
     {
         std::cout << "Incorrect login details" << std::endl;
         userAttempts--;
-        isLoggedin(); // recurse to allow user to input their details again until their 3 attempts are over
+        isLoggedin(userChoice); // recurse to allow user to input their details again until their 3 attempts are over
         if (userAttempts == 0)
         {
             std::cout << "Too many attempts, system will now terminate " << std::endl;
@@ -134,7 +134,7 @@ void isLoggedin() // Login for existing users
 
 }
 
-// void forgotPassword() redirect the user should they forget their password
+
 
 void menuAfterSignup()
 {
@@ -142,8 +142,7 @@ void menuAfterSignup()
     int userAttempts = 3;
     std::cout << "CineVault - Movie Search and Collections App\n" << std::endl;
     std::cout << "1. Login" << std::endl;
-    std::cout << "2. Sign-Up" << std::endl;
-    std::cout << "3. Forgot Password (NOT WORKING)" << std::endl;
+    std::cout << "2. Forgot Password (NOT WORKING)" << std::endl;
 
     std::cout << "Enter your choice: ";
     std::cin >> userChoice;
@@ -151,14 +150,10 @@ void menuAfterSignup()
     switch (userChoice) {
     case 1: {
         std::cout << "You will be redirected to the login form... \n";
+        isLoggedin(userChoice);
         break;
     }
     case 2: {
-        std::cout << "You will be redirected to the sign-up form...\n";
-        signUp(userChoice); // leads user to sign up form with the open database connection
-        break;
-    }
-    case 3: {
         std::cout << "Communicating with API...\n";
         // insert API code to request for email and send a OTP to reset password
         break;
@@ -166,7 +161,7 @@ void menuAfterSignup()
     default: {
         std::cout << "No choice has been selected, please try again \n";
         userAttempts--; // decrement per wrong attempt
-        choice(); // recurse until correct choice is inputted
+        menuAfterSignup(); // recurse until correct choice is inputted
         if (userAttempts == 0) {
             std::cout << "Too many incorrect attempts, console will now terminate...\n";
             exit(0);  // exit(0) indicates a successful exit
@@ -229,37 +224,72 @@ void createMovieWatchlistTable(int UID, std::string watchlistTableName) // once 
 }
 
 
-void signUp(int userChoice) // new users will be redirected to this function
+bool doesUsernameExist(std::string un) { // this function will check if the username exists within the database, if so will prompt the user
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    int rc;
+
+    rc = sqlite3_open("users.db", &db);
+
+    if (rc != SQLITE_OK) {
+        std::cerr << "Error opening database " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        exit(1);
+    }
+
+    const char* userCheck = "SELECT username FROM users WHERE username = ?"; // query to specically look at usernames
+    rc = sqlite3_prepare_v2(db, userCheck, -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Statement has failed to prepare! " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    rc = sqlite3_step(stmt);
+
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Execution has failed! " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    if (rc == SQLITE_ROW)
+    {
+        sqlite3_finalize(stmt);
+        return true;
+    }
+    else
+    {
+        sqlite3_finalize(stmt);
+        return false;
+    }
+}
+
+void signUp(int userChoice) 
 {
     sqlite3_stmt* stmt;
     sqlite3* db;
     std::string firstName, lastName, email, un, pw;
     int age, rc;
+    int userAttempts = 3;
 
     rc = sqlite3_open("users.db", &db);
 
-    if (rc != SQLITE_OK)
+    if (rc != SQLITE_OK) 
     {
         std::cerr << "Error opening database " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
-    }
-    else
-    {
-        std::cout << "Database has opened successfully! \n" << std::endl; // testing measure: will be removed soon
-    }
-
-    const char* query = "INSERT INTO users (individualName, individualSurname, email, individualAge, username, password) VALUES (?, ?, ?, ?, ?, ?)";
-    rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr); // initialize the statement
-
-    if (rc != SQLITE_OK)
-    {
-        std::cerr << "Intialization of statement has failed! " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
-    }
-    else
-    {
-        std::cout << "Statement initialization is a success! " << std::endl; // testing measure will be removed once confirmed
+        exit(1);
     }
 
     std::cout << "Sign-up form \n" << std::endl;
+
+    const char* query = "INSERT INTO users (individualName, individualSurname, email, individualAge, username, password) VALUES (?, ?, ?, ?, ?, ?)";
+    rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Initialization of statement has failed! " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        exit(1);
+    }
 
     std::cout << "What is your name?" << std::endl;
     std::cin >> firstName;
@@ -283,29 +313,24 @@ void signUp(int userChoice) // new users will be redirected to this function
         signUp(userChoice); // user has to reinput their details should they do this
     }
 
+    if (doesUsernameExist(un))
+    {
+        std::cout << "Username already exists. Please choose a different username.\n";
+    }
+
     std::cout << "Enter a password" << std::endl;
     std::cin >> pw;
 
     rc = sqlite3_bind_text(stmt, 1, firstName.c_str(), -1, SQLITE_STATIC);
     rc = sqlite3_bind_text(stmt, 2, lastName.c_str(), -1, SQLITE_STATIC);
-    rc = sqlite3_bind_text(stmt, 3, email.c_str(), -1, SQLITE_STATIC);
+    rc = sqlite3_bind_text(stmt, 3, email.c_str(), -1, SQLITE_STATIC);  // bind all the following information
     rc = sqlite3_bind_int(stmt, 4, age);
     rc = sqlite3_bind_text(stmt, 5, un.c_str(), -1, SQLITE_STATIC);
     rc = sqlite3_bind_text(stmt, 6, pw.c_str(), -1, SQLITE_STATIC);
 
-    if (rc != SQLITE_OK)
-    {
-        std::cerr << "Binding for one of the following parameters has failed " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << "\n" << std::endl;
-    }
-    else
-    {
-        std::cout << "Binding success\n"; // testing measure: will be removed soon
-    }
+    int result = sqlite3_step(stmt);
 
-
-    int result = sqlite3_step(stmt); // will insert the following information to the database
-
-    if (result == SQLITE_DONE)
+    if (result == SQLITE_DONE) 
     {
         std::cout << "Sign up success!" << std::endl;
         int UID = sqlite3_last_insert_rowid(db); // attain the last row ID to get a userID
@@ -313,12 +338,13 @@ void signUp(int userChoice) // new users will be redirected to this function
         createMovieWatchlistTable(UID, watchlistTableName); // create a watchlist table for the user
         menuAfterSignup(); // user is redirected back to the menu
     }
-    else
+    else 
     {
         std::cerr << "Database integration for signing up has failed " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
     }
 
-     
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
 }
 
 
@@ -335,16 +361,20 @@ void choice()
     std::cin >> userChoice;
 
     switch (userChoice) {
-    case 1: {
+    case 1: 
+    {
         std::cout << "You will be redirected to the login form... \n";
+        isLoggedin(userChoice);
         break;
     }
-    case 2: {
+    case 2: 
+    {
         std::cout << "You will be redirected to the sign-up form...\n";
         signUp(userChoice); // leads user to sign up form with the open database connection
         break;
     }
-    case 3: {
+    case 3: 
+    {
         std::cout << "Communicating with API...\n";
         // insert API code to request for email and send a OTP to reset password
         break;
