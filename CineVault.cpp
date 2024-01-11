@@ -120,6 +120,13 @@ void isLoggedin() // Login for existing users
     else
     {
         std::cout << "Incorrect login details" << std::endl;
+        userAttempts--;
+        isLoggedin(); // recurse to allow user to input their details again until their 3 attempts are over
+        if (userAttempts == 0)
+        {
+            std::cout << "Too many attempts, system will now terminate " << std::endl;
+            exit(0);
+        }
 
     }
     sqlite3_finalize(stmt);
@@ -156,7 +163,15 @@ void createMovieWatchlistTable(int UID, std::string watchlistTableName) // once 
     }
 
 
-    std::string query = "CREATE TABLE " + watchlistTableName + "(watchlistID INTEGER PRIMARY KEY NOT NULL, movieName TEXT, movieGenre TEXT, watchedStatus TEXT, userID INTEGER, FOREIGN KEY REFERENCES users(userID)";
+    std::string query = "CREATE TABLE " + watchlistTableName + " ("
+        "watchlistID INTEGER PRIMARY KEY NOT NULL, "
+        "movieName TEXT, "
+        "movieGenre TEXT, "
+        "watchedStatus TEXT, "
+        "userID INTEGER, "
+        "FOREIGN KEY (userID) REFERENCES users(userID)"
+        ")";   
+    
     const char* createWatchList = query.c_str(); // characterized the query
 
     int result = sqlite3_exec(db, createWatchList, nullptr, nullptr, nullptr);
@@ -220,6 +235,12 @@ void signUp(int userChoice) // new users will be redirected to this function
 
     std::cout << "Enter a username" << std::endl;
     std::cin >> un;
+
+    if (un == firstName)
+    {
+        std::cout << "Username cannot be the same as the first name" << std::endl;
+        signUp(userChoice); // user has to reinput their details should they do this
+    }
 
     std::cout << "Enter a password" << std::endl;
     std::cin >> pw;
