@@ -40,7 +40,7 @@ void loginSession(int UID, std::string individualName, std::string individualSur
 
     if (rc != SQLITE_OK)
     {
-        std::cout << "Error opening database" << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cout << "Error opening database \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
     }
     else
     {
@@ -67,19 +67,21 @@ void isLoggedin(int userChoice) // Login for existing users
 
     if (rc != SQLITE_OK)
     {
-        std::cout << "Error opening database" << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cout << "Error opening database \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
     }
     else
     {
         std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
     }
 
-    const char* login = "SELECT username, password FROM users WHERE username = ? AND password = ?";
+    const char* login = "SELECT * FROM users WHERE username = ? AND password = ?";
     rc = sqlite3_prepare_v2(db, login, -1, &stmt, nullptr);
 
     if (rc != SQLITE_OK)
     {
-        std::cout << "Error preparing statement" << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cout << "Failed to prepare SQL statement" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
     else
     {
@@ -92,12 +94,14 @@ void isLoggedin(int userChoice) // Login for existing users
     std::cout << "Enter your password" << std::endl;
     std::cin >> pw;
 
-    rc = sqlite3_bind_text(stmt, 5, un.c_str(), -1, SQLITE_STATIC);
-    rc = sqlite3_bind_text(stmt, 6, pw.c_str(), -1, SQLITE_STATIC);
+    rc = sqlite3_bind_text(stmt, 4, un.c_str(), -1, SQLITE_STATIC);
+    rc = sqlite3_bind_text(stmt, 5, pw.c_str(), -1, SQLITE_STATIC);
 
     if (rc != SQLITE_OK)
     {
-        std::cout << "Error preparing statement" << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cout << "Failed to prepare SQL statement" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
     else
     {
@@ -190,7 +194,9 @@ void createMovieWatchlistTable(int UID, std::string watchlistTableName) // once 
 
     if (rc != SQLITE_OK)
     {
-        std::cerr << "Error opening database " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cout << "Error opening SQL database" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
     else
     {
@@ -217,7 +223,9 @@ void createMovieWatchlistTable(int UID, std::string watchlistTableName) // once 
     }
     else
     {
-        std::cout << "Failed to generate user watchlist table " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cout << "Failed to generate user watchlist table" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
 
 
@@ -232,8 +240,9 @@ bool doesUsernameExist(std::string un) { // this function will check if the user
     rc = sqlite3_open("users.db", &db);
 
     if (rc != SQLITE_OK) {
-        std::cerr << "Error opening database " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
-        exit(1);
+        std::cout << "Error opening SQL database" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";       
     }
 
     const char* userCheck = "SELECT username FROM users WHERE username = ?"; // query to specically look at usernames
@@ -241,7 +250,9 @@ bool doesUsernameExist(std::string un) { // this function will check if the user
 
     if (rc != SQLITE_OK)
     {
-        std::cout << "Statement has failed to prepare! " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cout << "Failed to prepare SQL statement" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
 
     rc = sqlite3_step(stmt);
@@ -249,7 +260,9 @@ bool doesUsernameExist(std::string un) { // this function will check if the user
 
     if (rc != SQLITE_OK)
     {
-        std::cout << "Execution has failed! " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cout << "Execution has failed!" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
 
     if (rc == SQLITE_ROW)
@@ -276,8 +289,9 @@ void signUp(int userChoice)
 
     if (rc != SQLITE_OK) 
     {
-        std::cerr << "Error opening database " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
-        exit(1);
+        std::cout << "Error opening SQL database" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";        
     }
 
     std::cout << "Sign-up form \n" << std::endl;
@@ -287,7 +301,7 @@ void signUp(int userChoice)
 
     if (rc != SQLITE_OK)
     {
-        std::cerr << "Initialization of statement has failed! " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cerr << "Initialization of statement has failed! \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
         exit(1);
     }
 
@@ -301,7 +315,7 @@ void signUp(int userChoice)
 
     std::cin >> email;
 
-    std::cout << "How old are you?" << std::endl;
+    std::cout << "How old are you?" << std::endl; // future reference: based on the users age request for authentication via YOTI or any other authentic
     std::cin >> age;
 
     std::cout << "Enter a username" << std::endl;
@@ -316,6 +330,7 @@ void signUp(int userChoice)
     if (doesUsernameExist(un))
     {
         std::cout << "Username already exists. Please choose a different username.\n";
+        signUp(userChoice); // user has to reinput their details should they do this
     }
 
     std::cout << "Enter a password" << std::endl;
@@ -340,7 +355,9 @@ void signUp(int userChoice)
     }
     else 
     {
-        std::cerr << "Database integration for signing up has failed " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+        std::cout << "Database integration has failed!" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
 
     sqlite3_finalize(stmt);
@@ -350,14 +367,14 @@ void signUp(int userChoice)
 
 void choice()
 {
-    int userChoice;     // Handle user input
+    int userChoice; // Handle user input
     int userAttempts = 3;
     std::cout << "CineVault - Movie Search and Collections App\n" << std::endl;
     std::cout << "1. Login" << std::endl;
     std::cout << "2. Sign-Up" << std::endl;
     std::cout << "3. Forgot Password (NOT WORKING)" << std::endl;
 
-    std::cout << "Enter your choice: ";
+    std::cout << "";
     std::cin >> userChoice;
 
     switch (userChoice) {
@@ -413,7 +430,9 @@ int main() {
 
     if (rc != SQLITE_OK)
     {
-        std::cerr << "Failed to create users table. ERROR CODE: " << sqlite3_errcode(db) << " ERROR DETAILS: " << sqlite3_errmsg(db) << "\n" << std::endl;
+        std::cout << "Failed to create SQL table" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
     else
     {
