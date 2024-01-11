@@ -23,13 +23,23 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 // void searchMovies() THIS WILL ALLOW THE USER TO SEARCH FOR MOVIES
     // Utilise CURL code here
 
+// void createMovieWatchlistTable 
+// once the user has successfully signed up, the algorithm will run this section of code enabling the creation of the unique movie watchlist table per user
+
+
+void loginSession(int UID)
+{
+
+}
+
 void isLoggedin() // Login for existing users 
 {
-    std::cout << "Hello silly chicken, we haven't developed this section yet :)\n" << std::endl;
     sqlite3_stmt* stmt;
     sqlite3* db;
     int rc; // return code
+    int userAttempts = 3; // user attempts for login to prevent brute force
     std::string un, pw; // username and password
+    
 
     rc = sqlite3_open("users.db", &db);
 
@@ -54,17 +64,45 @@ void isLoggedin() // Login for existing users
         std::cout << "Statement successfully initialized!\n" << std::endl; // testing measure: will be removed soon
     }
 
+    std::cout << "Enter your username" << std::endl;
+    std::cin >> un;
 
+    std::cout << "Enter your password" << std::endl;
+    std::cin >> pw;
 
+    rc = sqlite3_bind_text(stmt, 5, un.c_str(), -1, SQLITE_STATIC);
+    rc = sqlite3_bind_text(stmt, 6, pw.c_str(), -1, SQLITE_STATIC);
 
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Error preparing statement" << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "Statement successfully initialized!\n" << std::endl; // testing measure: will be removed soon
+    }
 
+    std::cout << "Loggin in...\n";
 
+    int result = sqlite3_step(stmt);
+
+    if (result == SQLITE_ROW)
+    {
+        int UID = sqlite3_column_int(stmt, 0); // this will fetch the userID
+        std::cout << "userID: " << UID << std::endl;
+        std::cout << "User Authenticated" << std::endl;
+        loginSession(UID); // lead user to their login session
+    }
+    else
+    {
+        std::cout << "Incorrect login details" << std::endl;
+
+    }
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
 
 }
 
-
-// void createMovieWatchlistTable 
-// once the user has successfully signed up, the algorithm will run this section of code enabling the creation of the unique movie watchlist table per user
 
 
 // void forgotPassword() redirect the user should they forget their password
