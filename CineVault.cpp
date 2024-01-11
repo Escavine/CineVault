@@ -26,11 +26,19 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 void isLoggedin() // Login for existing users 
 {
     std::cout << "Hello silly chicken, we haven't developed this section yet :)\n" << std::endl;
+    sqlite3_stmt* stmt;
+    sqlite3* db;
+
+
 }
 
 
 // void createMovieWatchlistTable 
 // once the user has successfully signed up, the algorithm will run this section of code enabling the creation of the unique movie watchlist table per user
+
+
+// void forgotPassword() redirect the user should they forget their password
+
 
 void signUp(int userChoice) // new users will be redirected to this function
 {
@@ -122,8 +130,9 @@ void choice() {
     int userChoice;
     int userAttempts = 3;
     std::cout << "CineVault - Movie Search and Collections App\n" << std::endl;
-    std::cout << "1. Login (NOT WORKING)" << std::endl;
+    std::cout << "1. Login (IN DEVELOPMENT)" << std::endl;
     std::cout << "2. Sign-Up" << std::endl;
+    std::cout << "3. Forgot Password (NOT WORKING)" << std::endl;
 
     std::cout << "Enter your choice: ";
     std::cin >> userChoice;
@@ -136,6 +145,11 @@ void choice() {
     case 2: {
         std::cout << "You will be redirected to the sign-up form...\n";
         signUp(userChoice); // leads user to sign up form with the open database connection
+        break;
+    }
+    case 3: {
+        std::cout << "Communicating with API...\n";
+        // insert API code to request for email and send a OTP to reset password
         break;
     }
     default: {
