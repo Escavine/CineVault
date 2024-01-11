@@ -134,9 +134,49 @@ void isLoggedin() // Login for existing users
 
 }
 
+// void forgotPassword() redirect the user should they forget their password
+
+void menuAfterSignup()
+{
+    int userChoice;     // Handle user input
+    int userAttempts = 3;
+    std::cout << "CineVault - Movie Search and Collections App\n" << std::endl;
+    std::cout << "1. Login" << std::endl;
+    std::cout << "2. Sign-Up" << std::endl;
+    std::cout << "3. Forgot Password (NOT WORKING)" << std::endl;
+
+    std::cout << "Enter your choice: ";
+    std::cin >> userChoice;
+
+    switch (userChoice) {
+    case 1: {
+        std::cout << "You will be redirected to the login form... \n";
+        break;
+    }
+    case 2: {
+        std::cout << "You will be redirected to the sign-up form...\n";
+        signUp(userChoice); // leads user to sign up form with the open database connection
+        break;
+    }
+    case 3: {
+        std::cout << "Communicating with API...\n";
+        // insert API code to request for email and send a OTP to reset password
+        break;
+    }
+    default: {
+        std::cout << "No choice has been selected, please try again \n";
+        userAttempts--; // decrement per wrong attempt
+        choice(); // recurse until correct choice is inputted
+        if (userAttempts == 0) {
+            std::cout << "Too many incorrect attempts, console will now terminate...\n";
+            exit(0);  // exit(0) indicates a successful exit
+        }
+    }
+    }
+}
+
 // void hashSaltAlgorithm will be used to encrypt the password
 
-// void forgotPassword() redirect the user should they forget their password
 
 
 std::string generateWatchlistTable(int UID)
@@ -187,6 +227,7 @@ void createMovieWatchlistTable(int UID, std::string watchlistTableName) // once 
 
 
 }
+
 
 void signUp(int userChoice) // new users will be redirected to this function
 {
@@ -270,6 +311,7 @@ void signUp(int userChoice) // new users will be redirected to this function
         int UID = sqlite3_last_insert_rowid(db); // attain the last row ID to get a userID
         std::string watchlistTableName = generateWatchlistTable(UID);
         createMovieWatchlistTable(UID, watchlistTableName); // create a watchlist table for the user
+        menuAfterSignup(); // user is redirected back to the menu
     }
     else
     {
