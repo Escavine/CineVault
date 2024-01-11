@@ -27,12 +27,26 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 // void searchMovies() THIS WILL ALLOW THE USER TO SEARCH FOR MOVIES
     // Utilise CURL code here
 
-// void createMovieWatchlistTable 
-// once the user has successfully signed up, the algorithm will run this section of code enabling the creation of the unique movie watchlist table per user
+
 
 
 void loginSession(int UID, std::string individualName, std::string individualSurname)
 {
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    int rc;
+
+    rc = sqlite3_open("users.db", &db);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Error opening database" << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
+    }
+
     std::cout << "Welcome " << individualName << " " << individualSurname << std::endl;
     std::cout << "CineVault: Movie Search and Collection App" << std::endl;
 
@@ -118,6 +132,47 @@ void isLoggedin() // Login for existing users
 // void forgotPassword() redirect the user should they forget their password
 
 
+std::string generateWatchlistTable(int UID)
+{
+    return "userWatchlist_" + std::to_string(UID);
+
+}
+
+void createMovieWatchlistTable(int UID, std::string watchlistTableName) // once the user has successfully signed up, the algorithm will run this section of code enabling the creation of the unique movie watchlist table per user
+{
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    int rc;
+
+    rc = sqlite3_open("users.db", &db);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Error opening database " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "Database has opened successfully! \n" << std::endl; // testing measure: will be removed soon
+    }
+
+
+    std::string query = "CREATE TABLE " + watchlistTableName + "(watchlistID INTEGER PRIMARY KEY NOT NULL, movieName TEXT, movieGenre TEXT, watchedStatus TEXT, userID INTEGER, FOREIGN KEY REFERENCES users(userID)";
+    const char* createWatchList = query.c_str(); // characterized the query
+
+    int result = sqlite3_exec(db, createWatchList, nullptr, nullptr, nullptr);
+
+    if (result == SQLITE_OK)
+    {
+        std::cout << "User watchlist table has successfully been generated!" << std::endl;
+    }
+    else
+    {
+        std::cout << "Failed to generate user watchlist table " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+
+}
+
 void signUp(int userChoice) // new users will be redirected to this function
 {
     sqlite3_stmt* stmt;
@@ -191,6 +246,9 @@ void signUp(int userChoice) // new users will be redirected to this function
     if (result == SQLITE_DONE)
     {
         std::cout << "Sign up success!" << std::endl;
+        int UID = sqlite3_last_insert_rowid(db); // attain the last row ID to get a userID
+        std::string watchlistTableName = generateWatchlistTable(UID);
+        createMovieWatchlistTable(UID, watchlistTableName); // create a watchlist table for the user
     }
     else
     {
