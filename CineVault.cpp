@@ -27,8 +27,9 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 // once the user has successfully signed up, the algorithm will run this section of code enabling the creation of the unique movie watchlist table per user
 
 
-void loginSession(int UID)
+void loginSession(int UID, std::string individualName, std::string individualSurname)
 {
+
 
 }
 
@@ -89,9 +90,11 @@ void isLoggedin() // Login for existing users
     if (result == SQLITE_ROW)
     {
         int UID = sqlite3_column_int(stmt, 0); // this will fetch the userID
+        std::string individualName = (const char*)sqlite3_column_text(stmt, 1); // fetch individual name
+        std::string individualSurname = (const char*)sqlite3_column_text(stmt, 2); // fetch individual password
         std::cout << "userID: " << UID << std::endl;
         std::cout << "User Authenticated" << std::endl;
-        loginSession(UID); // lead user to their login session
+        loginSession(UID, individualName, individualSurname); // lead user to their login session
     }
     else
     {
@@ -103,7 +106,7 @@ void isLoggedin() // Login for existing users
 
 }
 
-
+// void hashSaltAlgorithm will be used to encrypt the password
 
 // void forgotPassword() redirect the user should they forget their password
 
