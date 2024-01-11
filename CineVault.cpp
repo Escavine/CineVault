@@ -6,6 +6,10 @@
 #include <chrono>
 #include <string>
 
+// Append the signup details to the users database to allow for them to login         
+// Create a user movie watchlist database to store the information of the movie/movies along with the given movie name for signUp function
+// The user movie watchlist database has to consist of (userID as a foreign key, watchStatus as a TEXT which can only hold WATCHED, WATCHING, DROPPED ETC, movieInfo and movieName)
+
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) // for cURL API usage
 {
     size_t totalSize = size * nmemb;
@@ -29,6 +33,9 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 
 void loginSession(int UID, std::string individualName, std::string individualSurname)
 {
+    std::cout << "Welcome " << individualName << " " << individualSurname << std::endl;
+    std::cout << "CineVault: Movie Search and Collection App" << std::endl;
+
 
 
 }
@@ -190,18 +197,16 @@ void signUp(int userChoice) // new users will be redirected to this function
         std::cerr << "Database integration for signing up has failed " << "Error code: " << sqlite3_errcode(db) << "Error message: " << sqlite3_errmsg(db) << std::endl;
     }
 
-           // Append the signup details to the users database to allow for them to login         
-          // Create a user movie watchlist database to store the information of the movie/movies along with the given movie name for signUp function
-          // The user movie watchlist database has to consist of (userID as a foreign key, watchStatus as a TEXT which can only hold WATCHED, WATCHING, DROPPED ETC, movieInfo and movieName)
+     
 }
 
 
-void choice() {
-    // Handle user input
-    int userChoice;
+void choice()
+{
+    int userChoice;     // Handle user input
     int userAttempts = 3;
     std::cout << "CineVault - Movie Search and Collections App\n" << std::endl;
-    std::cout << "1. Login (IN DEVELOPMENT)" << std::endl;
+    std::cout << "1. Login" << std::endl;
     std::cout << "2. Sign-Up" << std::endl;
     std::cout << "3. Forgot Password (NOT WORKING)" << std::endl;
 
@@ -236,8 +241,6 @@ void choice() {
 }
 
 int main() {
-    CURL* curl;
-    CURLcode res;
     sqlite3* db;
     std::string userChoice;
 
