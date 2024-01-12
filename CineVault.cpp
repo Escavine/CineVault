@@ -5,6 +5,7 @@
 #include <sqlite3.h> // Database usage
 #include <chrono>
 #include <string>
+#include <stdio.h> 
 
 // Append the signup details to the users database to allow for them to login         
 // Create a user movie watchlist database to store the information of the movie/movies along with the given movie name for signUp function
@@ -18,14 +19,63 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 }
 
 
-// void addMovies() THIS WILL ADD MOVIES TO ONES COLLECTION
-    // Utilise CURL code here
-    // curl_global_init(CURL_GLOBAL_DEFAULT);
-    // curl = curl_easy_init();
-    // if (curl)
+void addMovies() // this function will allow for the insertion of new movies to a users watchlist
+{
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    CURL* curl;
+    CURLcode res; // inserting CURL libraries
+    int rc;
+
+    rc = sqlite3_open("users.db", &db);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Error opening database \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
+    }
+
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    curl = curl_easy_init();
+
+    if (curl)
+    {
+        std::string data;
+        curl_easy_setopt(curl, CURLOPT_URL, "http://www.omdbapi.com/?apikey=[1d9b5025]&");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+
+        res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK)
+        {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+            
+        }
+        else
+        {
+            std::cout << data << std::endl;
+        }
+        curl_easy_cleanup(curl);
+
+    }
+
+    curl_global_cleanup();
+}
+
+
+
+
+
 
 // void searchMovies() THIS WILL ALLOW THE USER TO SEARCH FOR MOVIES
     // Utilise CURL code here
+
 
 
 bool userWatchlist(int UID)
@@ -45,8 +95,9 @@ bool userWatchlist(int UID)
         std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
     }
 
-    const char* query = "SELECT movieName, movieGenre, watchedStatus FROM users";
-    rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr);
+    std::string query = "SELECT movieName, movieGenre, watchedStatus FROM userWatchlist_" + std::to_string(UID);
+    const char* cQuery = query.c_str(); // concatenated query
+    rc = sqlite3_prepare_v2(db, cQuery, -1, &stmt, nullptr);
 
     if (rc != SQLITE_OK)
     {
@@ -66,9 +117,6 @@ bool userWatchlist(int UID)
     sqlite3_finalize(stmt);
     sqlite3_close(db);
     return true;
-
-
-
 }
 
 
@@ -76,7 +124,8 @@ void loginSession(int UID, std::string individualName, std::string individualSur
 {
     sqlite3* db;
     sqlite3_stmt* stmt;
-    int rc;
+    int rc, choice;
+    int chances = 3;
 
     rc = sqlite3_open("users.db", &db);
 
@@ -96,7 +145,43 @@ void loginSession(int UID, std::string individualName, std::string individualSur
 
     std::cout << "1. Add movies to watchlist (NOT WORKING)" << std::endl;
     std::cout << "2. Remove movies from watchlist (NOT WORKING)" << std::endl; // users are given options between the three
-    std::cout << "3. Termiante session (NOT WORKING)" << std::endl;
+    std::cout << "3. Termiante session" << std::endl;
+    std::cin >> choice;
+
+    switch (choice) {
+    case 1:
+    {
+        std::cout << "You are now being redirected to the adding movies page..." << std::endl;
+        break;
+    }
+    case 2:
+    {
+        std::cout << "You are now being redirected to the removing movies page..." << std::endl;
+        break;
+    }
+    case 3:
+    {
+        std::cout << "Your session is now going to be termianted..." << std::endl;
+        exit(0);
+        break;
+    }
+    default:
+    {
+        std::cout << "Invalid option, please enter a sensible value through the console" << std::endl;
+        chances--;
+
+        if (chances == 0)
+        {
+            std::cout << "Too many incorrect attempts, system will now terminate..." << std::endl;
+            exit(0);
+        }
+        else
+        {
+            loginSession(UID, individualName, individualSurname); // if chances aren't zero then recurse
+        }
+
+    }
+    }
 }
 
 void isLoggedin(int userChoice) // Login for existing users 
@@ -170,11 +255,14 @@ void isLoggedin(int userChoice) // Login for existing users
     {
         std::cout << "Incorrect login details" << std::endl;
         userAttempts--;
-        isLoggedin(userChoice); // recurse to allow user to input their details again until their 3 attempts are over
         if (userAttempts == 0)
         {
             std::cout << "Too many attempts, system will now terminate " << std::endl;
             exit(0);
+        }
+        else
+        {
+            isLoggedin(userChoice); // recurse to allow user to input their details again until their 3 attempts are over
         }
 
     }
@@ -210,10 +298,14 @@ void menuAfterSignup()
     default: {
         std::cout << "No choice has been selected, please try again \n";
         userAttempts--; // decrement per wrong attempt
-        menuAfterSignup(); // recurse until correct choice is inputted
+
         if (userAttempts == 0) {
             std::cout << "Too many incorrect attempts, console will now terminate...\n";
             exit(0);  // exit(0) indicates a successful exit
+        }
+        else
+        {
+            menuAfterSignup(); // recurse until correct choice is inputted
         }
     }
     }
@@ -341,6 +433,9 @@ bool isValidEmailFormat(std::string email)
 
 }
 
+
+// void hashSalt() future reference: this will encrypt the password to prevent any data from getting leaked 
+
 void signUp(int userChoice)
 {
     sqlite3_stmt* stmt;
@@ -366,7 +461,7 @@ void signUp(int userChoice)
     if (rc != SQLITE_OK)
     {
         std::cerr << "Initialization of statement has failed! \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
-        exit(1);
+        exit(0);
     }
 
     std::cout << "What is your name?" << std::endl;
@@ -475,10 +570,14 @@ void choice()
     default: {
         std::cout << "No choice has been selected, please try again \n";
         userAttempts--; // decrement per wrong attempt
-        choice(); // recurse until correct choice is inputted
+
         if (userAttempts == 0) {
             std::cout << "Too many incorrect attempts, console will now terminate...\n";
             exit(0);  // exit(0) indicates a successful exit
+        }
+        else
+        {
+            choice(); // recurse until correct choice is inputted
         }
     }
     }
