@@ -28,6 +28,48 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
     // Utilise CURL code here
 
 
+bool userWatchlist(int UID)
+{
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    int rc; // return code
+
+    rc = sqlite3_open("users.db", &db);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Error opening database \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
+    }
+
+    const char* query = "SELECT movieName, movieGenre, watchedStatus FROM users";
+    rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Error preparing query \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "Statement has been prepared!\n" << std::endl; // testing measure: will be removed soon
+    }
+
+    while (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        const char* movieWatchlist = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        std::cout << "Movie Watchlist: " << movieWatchlist << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return true;
+
+
+
+}
 
 
 void loginSession(int UID, std::string individualName, std::string individualSurname)
@@ -50,7 +92,7 @@ void loginSession(int UID, std::string individualName, std::string individualSur
     std::cout << "Welcome " << individualName << " " << individualSurname << std::endl;
     std::cout << "CineVault: Movie Search and Collection App" << std::endl;
 
-
+    int result = userWatchlist(UID);
 
 }
 
