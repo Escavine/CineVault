@@ -277,7 +277,26 @@ bool doesUsernameExist(std::string un) { // this function will check if the user
     }
 }
 
-void signUp(int userChoice) 
+
+bool isValidEmailFormat(std::string email)
+{
+    size_t atPosition = email.find("@");
+    size_t dotPosition = email.find(".");
+
+
+    if (atPosition != std::string::npos && dotPosition != std::string::npos && atPosition < dotPosition)
+    {
+        return true;
+        // redirect the user to an authentication system via their email after signup with the google API 
+    }
+    else
+    {
+        return false;
+    }
+
+}
+
+void signUp(int userChoice)
 {
     sqlite3_stmt* stmt;
     sqlite3* db;
@@ -287,11 +306,11 @@ void signUp(int userChoice)
 
     rc = sqlite3_open("users.db", &db);
 
-    if (rc != SQLITE_OK) 
+    if (rc != SQLITE_OK)
     {
         std::cout << "Error opening SQL database" << "\n"
             << "Error code: " << sqlite3_errcode(db) << "\n"
-            << "Error message: " << sqlite3_errmsg(db) << "\n";        
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
 
     std::cout << "Sign-up form \n" << std::endl;
@@ -314,6 +333,18 @@ void signUp(int userChoice)
     std::cout << "What is your email?" << std::endl;     // future reference: make some use cases to ensure the email is in correct format
 
     std::cin >> email;
+
+    if (isValidEmailFormat(email))
+    {
+        std::cout << "Email format is valid" << std::endl;
+    }
+    else 
+    {
+        std::cout << "Invalid email format" << std::endl;
+        signUp(userChoice); // recurse and allow user to reinput their details
+    }
+
+
 
     std::cout << "How old are you?" << std::endl; // future reference: based on the users age request for authentication via YOTI or any other authentic
     std::cin >> age;
