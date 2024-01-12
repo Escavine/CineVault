@@ -94,8 +94,8 @@ void isLoggedin(int userChoice) // Login for existing users
     std::cout << "Enter your password" << std::endl;
     std::cin >> pw;
 
-    rc = sqlite3_bind_text(stmt, 4, un.c_str(), -1, SQLITE_STATIC);
-    rc = sqlite3_bind_text(stmt, 5, pw.c_str(), -1, SQLITE_STATIC);
+    rc = sqlite3_bind_text(stmt, 1, un.c_str(), -1, SQLITE_STATIC); // bind the following parameters (username and password)
+    rc = sqlite3_bind_text(stmt, 2, pw.c_str(), -1, SQLITE_STATIC);
 
     if (rc != SQLITE_OK)
     {
