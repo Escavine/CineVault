@@ -46,7 +46,16 @@ void addMovies() // this function will allow for the insertion of new movies to 
     if (curl)
     {
         std::string data;
-        curl_easy_setopt(curl, CURLOPT_URL, "http://www.omdbapi.com/?apikey=[1d9b5025]&");
+        std::string movieTitle;
+
+        std::cout << "Enter the movie you'd like to search for" << std::endl;
+        std::cin >> movieTitle;
+
+        std::string apiKey = "1d9b5025";  // API key
+        std::string apiUrl = "http://www.omdbapi.com/?apikey=" + apiKey + "&t=" + movieTitle;
+        std::cout << apiUrl << std::endl; // testing measure: will be removed soon
+
+        curl_easy_setopt(curl, CURLOPT_URL, apiUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 
@@ -120,12 +129,11 @@ bool userWatchlist(int UID)
 }
 
 
-void loginSession(int UID, std::string individualName, std::string individualSurname)
+void loginSession(int UID, std::string individualName, std::string individualSurname, int switchChances)
 {
     sqlite3* db;
     sqlite3_stmt* stmt;
     int rc, choice;
-    int chances = 3;
 
     rc = sqlite3_open("users.db", &db);
 
@@ -168,30 +176,32 @@ void loginSession(int UID, std::string individualName, std::string individualSur
     default:
     {
         std::cout << "Invalid option, please enter a sensible value through the console" << std::endl;
-        chances--;
+        std::cout << "Attempts remaining: " << switchChances << std::endl; // will display the remaining attempts that the user has
 
-        if (chances == 0)
+        if (switchChances == 0)
         {
-            std::cout << "Too many incorrect attempts, system will now terminate..." << std::endl;
+            std::cout << "Too many incorrect attempts, system will now terminate..." << std::endl; // if they use up all their chances, then the system terminates
             exit(0);
         }
         else
         {
-            loginSession(UID, individualName, individualSurname); // if chances aren't zero then recurse
+            loginSession(UID, individualName, individualSurname, switchChances - 1); // if chances aren't zero then recurse
         }
 
     }
     }
 }
 
-void isLoggedin(int userChoice) // Login for existing users 
+
+
+void isLoggedin(int userChoice, int userAttempts) // user attempts for login to prevent brute force
 {
     sqlite3_stmt* stmt;
     sqlite3* db;
     int rc; // return code
-    int userAttempts = 3; // user attempts for login to prevent brute force
     std::string un, pw; // username and password
-    
+    int switchChances = 3; // this is for the switch statement referencing the above function (loginSession)
+
 
     rc = sqlite3_open("users.db", &db);
 
@@ -199,10 +209,7 @@ void isLoggedin(int userChoice) // Login for existing users
     {
         std::cout << "Error opening database \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
     }
-    else
-    {
-        std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
-    }
+
 
     const char* login = "SELECT * FROM users WHERE username = ? AND password = ?";
     rc = sqlite3_prepare_v2(db, login, -1, &stmt, nullptr);
@@ -213,10 +220,7 @@ void isLoggedin(int userChoice) // Login for existing users
             << "Error code: " << sqlite3_errcode(db) << "\n"
             << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
-    else
-    {
-        std::cout << "Statement successfully initialized!\n" << std::endl; // testing measure: will be removed soon
-    }
+
 
     std::cout << "Enter your username" << std::endl;
     std::cin >> un;
@@ -233,10 +237,7 @@ void isLoggedin(int userChoice) // Login for existing users
             << "Error code: " << sqlite3_errcode(db) << "\n"
             << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
-    else
-    {
-        std::cout << "Statement successfully initialized!\n" << std::endl; // testing measure: will be removed soon
-    }
+
 
     std::cout << "Logging in...\n";
 
@@ -249,12 +250,14 @@ void isLoggedin(int userChoice) // Login for existing users
         std::string individualSurname = (const char*)sqlite3_column_text(stmt, 2); // fetch individual password
         std::cout << "userID: " << UID << std::endl;
         std::cout << "User Authenticated" << std::endl;
-        loginSession(UID, individualName, individualSurname); // lead user to their login session
+        loginSession(UID, individualName, individualSurname, switchChances); // lead user to their login session
     }
     else
     {
         std::cout << "Incorrect login details" << std::endl;
-        userAttempts--;
+
+        std::cout << "Attempts remaining: " << userAttempts << std::endl; // will display user attempts to ensure they stop making mistakes
+
         if (userAttempts == 0)
         {
             std::cout << "Too many attempts, system will now terminate " << std::endl;
@@ -262,13 +265,12 @@ void isLoggedin(int userChoice) // Login for existing users
         }
         else
         {
-            isLoggedin(userChoice); // recurse to allow user to input their details again until their 3 attempts are over
+            isLoggedin(userChoice, userAttempts - 1); // recurse to allow the user to input their details again until their 3 attempts are over
         }
-
     }
+
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-
 }
 
 
@@ -287,7 +289,7 @@ void menuAfterSignup()
     switch (userChoice) {
     case 1: {
         std::cout << "You will be redirected to the login form... \n";
-        isLoggedin(userChoice);
+        isLoggedin(userChoice, userAttempts);
         break;
     }
     case 2: {
@@ -540,7 +542,7 @@ void choice()
 {
     int userChoice; // Handle user input
     int userAttempts = 3;
-    std::cout << "CineVault - Movie Search and Collections App\n" << std::endl;
+    std::cout << "CineVault - Movie Search and Collections App (CONSOLE)\n" << std::endl;
     std::cout << "1. Login" << std::endl;
     std::cout << "2. Sign-Up" << std::endl;
     std::cout << "3. Forgot Password (NOT WORKING)" << std::endl;
@@ -552,7 +554,7 @@ void choice()
     case 1: 
     {
         std::cout << "You will be redirected to the login form... \n";
-        isLoggedin(userChoice);
+        isLoggedin(userChoice, userAttempts);
         break;
     }
     case 2: 
@@ -569,16 +571,7 @@ void choice()
     }
     default: {
         std::cout << "No choice has been selected, please try again \n";
-        userAttempts--; // decrement per wrong attempt
-
-        if (userAttempts == 0) {
-            std::cout << "Too many incorrect attempts, console will now terminate...\n";
-            exit(0);  // exit(0) indicates a successful exit
-        }
-        else
-        {
-            choice(); // recurse until correct choice is inputted
-        }
+        choice(); // recurse until correct choice is inputted
     }
     }
 }
@@ -594,10 +587,7 @@ int main() {
         std::cerr << "Database failed to open\n" << std::endl;
         return rc;
     }
-    else
-    {
-        std::cout << "Database opened successfully\n" << std::endl;
-    }
+
 
     // Creates users table if it doesn't exist
     const char* createTable = "CREATE TABLE IF NOT EXISTS users (userID INTEGER PRIMARY KEY NOT NULL, individualName TEXT, individualSurname TEXT, email TEXT, individualAge INTEGER, username TEXT, password TEXT)";
@@ -608,10 +598,6 @@ int main() {
         std::cout << "Failed to create SQL table" << "\n"
             << "Error code: " << sqlite3_errcode(db) << "\n"
             << "Error message: " << sqlite3_errmsg(db) << "\n";
-    }
-    else
-    {
-        std::cout << "Users table created successfully\n" << std::endl;
     }
 
     // Call the choice function with the open database connection
