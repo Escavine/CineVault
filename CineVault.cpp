@@ -537,6 +537,12 @@ void signUp(int userChoice)
 }
 
 
+std::string generateOTP()
+{
+    return "24139"; // this will be changed by introducing some randint library or something similiar
+
+}
+
 void forgotPassword(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
 {
     CURL* curl;
@@ -554,7 +560,15 @@ void forgotPassword(std::string email) // should the users email exist in the da
     {
         std::string data;
 
-        curl_easy_setopt(curl, CURLOPT_URL, "")
+        std::string endpoint = "https://api.postmarkapp.com/email";
+
+        curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+
+        std::string otp = generateOTP(); // function that will generate a random OTP number for the user
+
+        // continue from here
     }
 
 
