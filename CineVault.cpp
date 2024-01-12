@@ -487,7 +487,6 @@ void signUp(int userChoice)
     }
 
 
-
     std::cout << "How old are you?" << std::endl; // future reference: based on the users age request for authentication via YOTI or any other authentic
     std::cin >> age;
 
@@ -538,15 +537,34 @@ void signUp(int userChoice)
 }
 
 
-// void forgotPassword()
-// should the users email exist in the database, they'll be redirected to this function to successfully reset their password
+void forgotPassword(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
+{
+    CURL* curl;
+    CURLcode res; // CURL libraries
+    sqlite3* db; // SQL libraries
+    sqlite3_stmt* stmt;
+
+    // API code to request for email and send a OTP to reset password
+    
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    curl = curl_easy_init();
+
+    if (curl)
+    {
+        std::string data;
+
+        curl_easy_setopt(curl, CURLOPT_URL, "")
+    }
+
+
+
+}
 
 void checkForUserEmail(int userChoice, int userAttempts)
 {
     sqlite3* db; // sql libraries
     sqlite3_stmt* stmt;
-    CURL* curl;
-    CURLcode res; // inserting CURL libraries
     int rc; // return code
     std::string email; // email
 
@@ -562,7 +580,8 @@ void checkForUserEmail(int userChoice, int userAttempts)
     }
 
 
-    const char* query = "SELECT email FROM users WHERE email = ?"; // prompt to find email
+    const char* query = "SELECT email FROM users WHERE email = ?"; // SQL prompt
+    rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr); // prepare the given statement
 
     std::cout << "Enter your email address" << std::endl;
     std::cin >> email;
@@ -570,6 +589,7 @@ void checkForUserEmail(int userChoice, int userAttempts)
     if (isValidEmailFormat(email))
     {
         std::cout << "Email format is valid" << std::endl;
+        forgotPassword(email); // direct the user to the forgot password function
     }
     else
     {
@@ -584,15 +604,6 @@ void checkForUserEmail(int userChoice, int userAttempts)
 
         }
     }
-
-    // if the email address is valid, then an OTP will be sent to the users email via an API
-    
-    // insert API code to request for email and send a OTP to reset password
-
-
-    
-    
-
     sqlite3_finalize(stmt); 
     sqlite3_close(db);
 
