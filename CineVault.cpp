@@ -538,16 +538,17 @@ void signUp(int userChoice)
 }
 
 
-// void forgotPassword 
+// void forgotPassword()
 // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
 
-void checkForUserEmail(int userChoice)
+void checkForUserEmail(int userChoice, int userAttempts)
 {
     sqlite3* db; // sql libraries
     sqlite3_stmt* stmt;
     CURL* curl;
     CURLcode res; // inserting CURL libraries
     int rc; // return code
+    std::string email; // email
 
     // firstly, we will check if the users email exists on the system
     
@@ -559,13 +560,32 @@ void checkForUserEmail(int userChoice)
             << "Error code: " << sqlite3_errcode(db) << "\n"
             << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
-    else
-    {
-        std::cout << "Database has successfully been opened!" << std::endl; // testing measure: will be removed soon
-    }
 
+
+    const char* query = "SELECT email FROM users WHERE email = ?"; // prompt to find email
 
     std::cout << "Enter your email address" << std::endl;
+    std::cin >> email;
+
+    if (isValidEmailFormat(email))
+    {
+        std::cout << "Email format is valid" << std::endl;
+    }
+    else
+    {
+        std::cout << "Invalid email format, please ensure that it is in sensible format." << std::endl;
+        std::cout << "Attempts remaining: " << userAttempts << std::endl; // display the users remaining input attempts
+        checkForUserEmail(userChoice, userAttempts - 1); // decrement the user attempts that way they give the correct input the next round
+
+        if (userAttempts == 0)
+        {
+            std::cout << "Too many incorrect attempts, system will now terminate..." << std::endl;
+            exit(0); // successfully initiate the termination should the remaining attempts be at 0
+
+        }
+    }
+
+    // if the email address is valid, then an OTP will be sent to the users email via an API
     
     // insert API code to request for email and send a OTP to reset password
 
@@ -586,7 +606,7 @@ void choice()
     std::cout << "CineVault - Movie Search and Collections App (CONSOLE)\n" << std::endl;
     std::cout << "1. Login" << std::endl;
     std::cout << "2. Sign-Up" << std::endl;
-    std::cout << "3. Forgot Password (NOT WORKING)" << std::endl;
+    std::cout << "3. Forgot Password (IN DEVELOPMENT)" << std::endl;
 
     std::cout << "";
     std::cin >> userChoice;
@@ -607,7 +627,7 @@ void choice()
     case 3: 
     {
         std::cout << "Communicating with API...\n";
-        checkForUserEmail(userChoice); // lead the user to the forgot password function
+        checkForUserEmail(userChoice, userAttempts); // lead the user to the forgot password function
         break;
     }
     default: {
