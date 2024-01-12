@@ -59,7 +59,7 @@ bool userWatchlist(int UID)
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
-        const char* movieWatchlist = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        const char* movieWatchlist = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)); // this statement loops through the SQL rows to find the given parameters from the query
         std::cout << "Movie Watchlist: " << movieWatchlist << std::endl;
     }
 
@@ -92,8 +92,11 @@ void loginSession(int UID, std::string individualName, std::string individualSur
     std::cout << "Welcome " << individualName << " " << individualSurname << std::endl;
     std::cout << "CineVault: Movie Search and Collection App" << std::endl;
 
-    int result = userWatchlist(UID);
+    int result = userWatchlist(UID); // display the users current movie watchlist
 
+    std::cout << "1. Add movies to watchlist (NOT WORKING)" << std::endl;
+    std::cout << "2. Remove movies from watchlist (NOT WORKING)" << std::endl; // users are given options between the three
+    std::cout << "3. Termiante session (NOT WORKING)" << std::endl;
 }
 
 void isLoggedin(int userChoice) // Login for existing users 
