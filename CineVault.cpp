@@ -482,7 +482,7 @@ void signUp(int userChoice)
     }
     else 
     {
-        std::cout << "Invalid email format" << std::endl;
+        std::cerr << "Invalid email format" << std::endl;
         signUp(userChoice); // recurse and allow user to reinput their details
     }
 
@@ -528,13 +528,54 @@ void signUp(int userChoice)
     }
     else 
     {
-        std::cout << "Database integration has failed!" << "\n"
+        std::cerr << "Database integration has failed!" << "\n"
             << "Error code: " << sqlite3_errcode(db) << "\n"
             << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
 
     sqlite3_finalize(stmt);
     sqlite3_close(db);
+}
+
+
+// void forgotPassword 
+// should the users email exist in the database, they'll be redirected to this function to successfully reset their password
+
+void checkForUserEmail(int userChoice)
+{
+    sqlite3* db; // sql libraries
+    sqlite3_stmt* stmt;
+    CURL* curl;
+    CURLcode res; // inserting CURL libraries
+    int rc; // return code
+
+    // firstly, we will check if the users email exists on the system
+    
+    rc = sqlite3_open("users.db", &db); // open the database
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Opening database has failed!" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
+    }
+    else
+    {
+        std::cout << "Database has successfully been opened!" << std::endl; // testing measure: will be removed soon
+    }
+
+
+    std::cout << "Enter your email address" << std::endl;
+    
+    // insert API code to request for email and send a OTP to reset password
+
+
+    
+    
+
+    sqlite3_finalize(stmt); 
+    sqlite3_close(db);
+
 }
 
 
@@ -566,7 +607,7 @@ void choice()
     case 3: 
     {
         std::cout << "Communicating with API...\n";
-        // insert API code to request for email and send a OTP to reset password
+        checkForUserEmail(userChoice); // lead the user to the forgot password function
         break;
     }
     default: {
