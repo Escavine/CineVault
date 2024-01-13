@@ -545,13 +545,35 @@ void newPassword()
 
 int generateOTP()
 {
-    return 24139; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
+    int storedOTP = 24139;
+    return storedOTP; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
+
 
 }
 
 
-void verifiedOTP(int otp)
+void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string email)
 {
+    int userChoice;
+
+    if (inputtedOTP == generatedOTP)
+    {
+        std::cout << "OTP is valid, success." << std::endl;
+    }
+    else
+    {
+        std::cout << "OTP is invalid, please try again." << std::endl;
+        std::cout << "Would you like to be sent another OTP via email? (1 for yes, 2 for no)" << std::endl;
+        std::cin >> userChoice;
+
+        if (userChoice == 1)
+        {
+            otpChances--; // decrement otp chances to prevent spam otp requests
+            std::cout << "OTP requests remaining: " << otpChances << std::endl; // testing measure to ensure that the decrementation is working correctly, will be removed soon should it work fine
+            OTP(email); // allow for the user to get an OTP request again
+
+        }
+    }
     // compares stored otp to the otp entered by the suer
 }
 
@@ -562,7 +584,8 @@ void OTP(std::string email) // should the users email exist in the database, the
     CURLcode res; // CURL libraries
     sqlite3* db; // SQL libraries
     sqlite3_stmt* stmt;
-    int 
+    int inputtedOTP; // users input when asked for OTP
+    int otpChances = 3; // users will get 3 chances to input the correct OTP
 
     // API code to request for email and send a OTP to reset password
     
@@ -602,7 +625,9 @@ void OTP(std::string email) // should the users email exist in the database, the
         else
         {
             std::cout << "OTP sent successfully!" << std::endl;
-            std::cout << "Enter your OTP" << std::endl; // when user receives OTP
+            std::cout << "Enter your OTP" << std::endl; // user will receive the OTP via their email and be asked to enter it to confirm their identity 
+            std::cin >> inputtedOTP; 
+            verifyOTP(inputtedOTP, generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
 
         }
 
