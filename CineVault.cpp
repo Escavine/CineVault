@@ -537,81 +537,87 @@ void signUp(int userChoice)
 }
 
 
-void newPassword()
-{ 
-    sqlite3* db; // SQL usage
+void newPassword(std::string email)
+{
+    sqlite3* db;
     sqlite3_stmt* stmt;
-    int rc; // return code
-    std::string newPassword; // users new password will be stored here
-
-    // once the users OTP has been confirmed, then the user will be redirected here
+    int rc;
+    std::string newPassword;
+    int userID;
 
     rc = sqlite3_open("users.db", &db);
 
     if (rc != SQLITE_OK)
     {
-        std::cerr << "Error opening SQL database" << "\n"
-            << "Error code: " << sqlite3_errcode(db) << "\n"
-            << "Error message: " << sqlite3_errmsg(db) << "\n";
+        std::cerr << "Error opening SQL database: " << sqlite3_errmsg(db) << std::endl;
+        return;
     }
 
-
-
-    const char* finduserID = "SELECT * FROM users";
-    rc = sqlite3_prepare_v2(db, finduserID, -1, &stmt, nullptr);
+    const char* findUserIDQuery = "SELECT userID FROM users WHERE email = ?"; // Replace with a condition to identify the user, e.g., by email or username
+    rc = sqlite3_prepare_v2(db, findUserIDQuery, -1, &stmt, nullptr);
 
     if (rc != SQLITE_OK)
     {
-        std::cerr << "Failed to prepare SQL statement" << "\n"
-            << "Error code: " << sqlite3_errcode(db) << "\n"
-            << "Error message: " << sqlite3_errmsg(db) << "\n";
+        std::cerr << "Failed to prepare SQL statement: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return;
     }
+    
+    rc = sqlite3_bind_text(stmt, 1, email.c_str(), email.length(), SQLITE_STATIC);
 
+    rc = sqlite3_step(stmt);
 
-    int result = sqlite3_step(stmt);
-
-    if (result == SQLITE_ROW)
+    if (rc == SQLITE_ROW)
     {
-        int UID = sqlite3_column_int(stmt, 0); // this will fetch the userID
-        std::cout << "userID: " << UID << std::endl;
+        userID = sqlite3_column_int(stmt, 0);
+        std::cout << "User passsword reset authorized, confirming user ID: " << userID << std::endl;
     }
     else
     {
-        std::cerr << "Failed to attain userID" << "\n"
-            << "Error code: " << sqlite3_errcode(db) << "\n"
-            << "Error message: " << sqlite3_errmsg(db) << "\n";
-
+        std::cerr << "Failed to attain userID" << std::endl;
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return;
     }
 
-    const char* changePassword = "UPDATE users SET password = ?, WHERE userID = " + UID.to_string(); // insert actual userID
+    std::string updatePasswordQuery = "UPDATE users SET password = ? WHERE userID = ?";
 
-    rc = sqlite3_prepare_v2(db, changePassword, -1, &stmt, nullptr);
+    rc = sqlite3_prepare_v2(db, updatePasswordQuery.c_str(), -1, &stmt, nullptr);
 
     if (rc != SQLITE_OK)
     {
-        std::cout << "Error preparing SQL statement" << "\n"
-            << "Error code: " << sqlite3_errcode(db) << "\n"
-            << "Error message: " << sqlite3_errmsg(db) << "\n";
+        std::cerr << "Error preparing SQL statement: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return;
     }
 
-    
     std::cout << "Enter a new password" << std::endl;
-    std::cin >> newPassword;
+    std::getline(std::cin, newPassword);
 
-    rc = sqlite3_exec(db, changePassword, 0, 0, 0);
+    rc = sqlite3_bind_text(stmt, 1, newPassword.c_str(), -1, SQLITE_STATIC);
+    rc = sqlite3_bind_int(stmt, 2, userID);
 
     if (rc != SQLITE_OK)
     {
-        std::cout << "Error changing password" << "\n"
-            << "Error code: " << sqlite3_errcode(db) << "\n"
-            << "Error message: " << sqlite3_errmsg(db) << "\n";
+        std::cerr << "Error binding parameters: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return;
+    }
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE)
+    {
+        std::cerr << "Error updating password: " << sqlite3_errmsg(db) << std::endl;
     }
     else
     {
         std::cout << "User password has successfully been changed!" << std::endl;
-        choice(); // lead the user back to the signup/login form
     }
 
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    choice(); // lead the user back to the signup/login form
 }
 
 
@@ -631,7 +637,7 @@ void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string em
     if (inputtedOTP == generatedOTP)
     {
         std::cout << "OTP is valid, success." << std::endl; // should both values be the same, the users identity will be successfully confirmed
-        newPassword(); // user will now be able to create a new password
+        newPassword(email); // user will now be able to create a new password
     }
     else
     {
