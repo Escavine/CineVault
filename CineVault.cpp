@@ -417,7 +417,11 @@ bool doesUsernameExist(std::string un) { // this function will check if the user
 }
 
 
-bool isValidEmailFormat(std::string email)
+
+
+// void hashSalt() future reference: this will encrypt the password to prevent any data from getting leaked 
+
+bool validateEmailFormat(std::string email)
 {
     size_t atPosition = email.find("@");
     size_t dotPosition = email.find(".");
@@ -434,9 +438,6 @@ bool isValidEmailFormat(std::string email)
     }
 
 }
-
-
-// void hashSalt() future reference: this will encrypt the password to prevent any data from getting leaked 
 
 void signUp(int userChoice)
 {
@@ -476,7 +477,7 @@ void signUp(int userChoice)
 
     std::cin >> email;
 
-    if (isValidEmailFormat(email))
+    if (validateEmailFormat(email))
     {
         std::cout << "Email format is valid" << std::endl;
     }
@@ -537,6 +538,114 @@ void signUp(int userChoice)
 }
 
 
+bool isValidEmailFormat(std::string email)
+{
+    size_t atPosition = email.find("@");
+    size_t dotPosition = email.find(".");
+
+
+    if (atPosition != std::string::npos && dotPosition != std::string::npos && atPosition < dotPosition)
+    {
+        return true;
+        // redirect the user to an authentication system via their email after signup with the google API 
+    }
+    else
+    {
+        return false;
+    }
+
+}
+
+void checkForUserEmail(int userChoice, int userAttempts)
+{
+    sqlite3* db; // sql libraries
+    sqlite3_stmt* stmt;
+    int rc; // return code
+    std::string email; // email
+
+    // firstly, we will check if the users email exists on the system
+
+    rc = sqlite3_open("users.db", &db); // open the database
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Opening database has failed!" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
+    }
+
+
+    const char* query = "SELECT email FROM users WHERE email = ?"; // SQL prompt
+    rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr); // prepare the given statement
+
+    std::cout << "Forgot password" << std::endl;
+    std::cout << "Enter your email address" << std::endl;
+    std::cin >> email;
+
+    if (isValidEmailFormat(email))
+    {
+        std::cout << "User email format is valid." << std::endl;
+        OTP(email); // direct the user to the forgot password function
+    }
+    else
+    {
+        std::cout << "Invalid email format, please ensure that it is in sensible format." << std::endl;
+        std::cout << "Attempts remaining: " << userAttempts << std::endl; // display the users remaining input attempts
+        checkForUserEmail(userChoice, userAttempts - 1); // decrement the user attempts that way they give the correct input the next round
+
+        if (userAttempts == 0)
+        {
+            std::cout << "Too many incorrect attempts, system will now terminate..." << std::endl;
+            exit(0); // successfully initiate the termination should the remaining attempts be at 0
+
+        }
+    }
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+
+}
+
+
+void choice()
+{
+    int userChoice; // Handle user input
+    int userAttempts = 3;
+    std::cout << "CineVault - Movie Search and Collections App (CONSOLE)\n" << std::endl;
+    std::cout << "1. Login" << std::endl;
+    std::cout << "2. Sign-Up" << std::endl;
+    std::cout << "3. Forgot Password (IN DEVELOPMENT)" << std::endl;
+
+    std::cout << "";
+    std::cin >> userChoice;
+
+    switch (userChoice) {
+    case 1:
+    {
+        std::cout << "You will be redirected to the login form... \n";
+        isLoggedin(userChoice, userAttempts);
+        break;
+    }
+    case 2:
+    {
+        std::cout << "You will be redirected to the sign-up form...\n";
+        signUp(userChoice); // leads user to sign up form with the open database connection
+        break;
+    }
+    case 3:
+    {
+        std::cout << "Communicating with API...\n";
+        checkForUserEmail(userChoice, userAttempts); // lead the user to the forgot password function
+        break;
+    }
+    default: {
+        std::cout << "No choice has been selected, please try again \n";
+        choice(); // recurse until correct choice is inputted
+    }
+    }
+}
+
+
+
 void newPassword(std::string email)
 {
     sqlite3* db;
@@ -562,7 +671,7 @@ void newPassword(std::string email)
         sqlite3_close(db);
         return;
     }
-    
+
     rc = sqlite3_bind_text(stmt, 1, email.c_str(), email.length(), SQLITE_STATIC);
 
     rc = sqlite3_step(stmt);
@@ -617,17 +726,8 @@ void newPassword(std::string email)
 
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    choice(); // lead the user back to the signup/login form
 }
 
-
-int generateOTP()
-{
-    int storedOTP = 24139;
-    return storedOTP; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
-
-
-}
 
 
 void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string email)
@@ -656,6 +756,15 @@ void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string em
 }
 
 
+int generateOTP()
+{
+    int storedOTP = 24139;
+    return storedOTP; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
+
+
+}
+
+
 void OTP(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
 {
     CURL* curl;
@@ -666,7 +775,7 @@ void OTP(std::string email) // should the users email exist in the database, the
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
 
     // API code to request for email and send a OTP to reset password
-    
+
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
     curl = curl_easy_init();
@@ -676,7 +785,7 @@ void OTP(std::string email) // should the users email exist in the database, the
         std::string data;
 
         // headers and authentication
-        std::string endpoint = "https://api.postmarkapp.com/email"; 
+        std::string endpoint = "https://api.postmarkapp.com/email";
         curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
@@ -704,7 +813,7 @@ void OTP(std::string email) // should the users email exist in the database, the
         {
             std::cout << "OTP sent successfully!" << std::endl;
             std::cout << "Enter your OTP" << std::endl; // user will receive the OTP via their email and be asked to enter it to confirm their identity 
-            std::cin >> inputtedOTP; 
+            std::cin >> inputtedOTP;
             verifyOTP(inputtedOTP, generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
 
         }
@@ -718,93 +827,6 @@ void OTP(std::string email) // should the users email exist in the database, the
 }
 
 
-void checkForUserEmail(int userChoice, int userAttempts)
-{
-    sqlite3* db; // sql libraries
-    sqlite3_stmt* stmt;
-    int rc; // return code
-    std::string email; // email
-
-    // firstly, we will check if the users email exists on the system
-    
-    rc = sqlite3_open("users.db", &db); // open the database
-
-    if (rc != SQLITE_OK)
-    {
-        std::cerr << "Opening database has failed!" << "\n"
-            << "Error code: " << sqlite3_errcode(db) << "\n"
-            << "Error message: " << sqlite3_errmsg(db) << "\n";
-    }
-
-
-    const char* query = "SELECT email FROM users WHERE email = ?"; // SQL prompt
-    rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr); // prepare the given statement
-
-    std::cout << "Forgot password" << std::endl;
-    std::cout << "Enter your email address" << std::endl;
-    std::cin >> email;
-
-    if (isValidEmailFormat(email))
-    {
-        std::cout << "User email format is valid." << std::endl;
-        OTP(email); // direct the user to the forgot password function
-    }
-    else
-    {
-        std::cout << "Invalid email format, please ensure that it is in sensible format." << std::endl;
-        std::cout << "Attempts remaining: " << userAttempts << std::endl; // display the users remaining input attempts
-        checkForUserEmail(userChoice, userAttempts - 1); // decrement the user attempts that way they give the correct input the next round
-
-        if (userAttempts == 0)
-        {
-            std::cout << "Too many incorrect attempts, system will now terminate..." << std::endl;
-            exit(0); // successfully initiate the termination should the remaining attempts be at 0
-
-        }
-    }
-    sqlite3_finalize(stmt); 
-    sqlite3_close(db);
-
-}
-
-
-void choice()
-{
-    int userChoice; // Handle user input
-    int userAttempts = 3;
-    std::cout << "CineVault - Movie Search and Collections App (CONSOLE)\n" << std::endl;
-    std::cout << "1. Login" << std::endl;
-    std::cout << "2. Sign-Up" << std::endl;
-    std::cout << "3. Forgot Password (IN DEVELOPMENT)" << std::endl;
-
-    std::cout << "";
-    std::cin >> userChoice;
-
-    switch (userChoice) {
-    case 1: 
-    {
-        std::cout << "You will be redirected to the login form... \n";
-        isLoggedin(userChoice, userAttempts);
-        break;
-    }
-    case 2: 
-    {
-        std::cout << "You will be redirected to the sign-up form...\n";
-        signUp(userChoice); // leads user to sign up form with the open database connection
-        break;
-    }
-    case 3: 
-    {
-        std::cout << "Communicating with API...\n";
-        checkForUserEmail(userChoice, userAttempts); // lead the user to the forgot password function
-        break;
-    }
-    default: {
-        std::cout << "No choice has been selected, please try again \n";
-        choice(); // recurse until correct choice is inputted
-    }
-    }
-}
 
 int main() {
     sqlite3* db;
