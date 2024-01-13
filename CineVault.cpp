@@ -723,6 +723,21 @@ void OTP(std::string email) // should the users email exist in the database, the
     curl_global_cleanup();
 }
 
+boolean isValidEmailAddress(std::string email)
+{
+    size_t atPosition = email.find("@"); // these characters will be searched for within the email variable to ensure that it is indeed in correct format
+    size_t dotPosition = email.find(".");
+
+    if (atPosition != std::string::npos && dotPosition != std::string::npos && atPosition < dotPosition)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+
+}
 
 void checkForUserEmail(int userChoice, int userAttempts)
 {
@@ -730,8 +745,6 @@ void checkForUserEmail(int userChoice, int userAttempts)
     sqlite3_stmt* stmt;
     int rc; // return code
     std::string email; // email
-    size_t atPosition = email.find("@"); // these characters will be searched for within the email variable to ensure that it is indeed in correct format
-    size_t dotPosition = email.find(".");
 
 
     // firstly, we will check if the users email exists on the system
@@ -754,7 +767,7 @@ void checkForUserEmail(int userChoice, int userAttempts)
     std::cin >> email;
 
 
-    if (atPosition != std::string::npos && dotPosition != std::string::npos && atPosition < dotPosition)
+    if (isValidEmailAddress(email))
     {
         std::cout << "User email format is valid." << std::endl;
         OTP(email); // direct the user to the forgot password function
