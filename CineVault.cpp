@@ -538,6 +538,186 @@ void signUp(int userChoice)
 }
 
 
+void newPassword(std::string email)
+{
+    sqlite3* db;
+    sqlite3_stmt* stmt;
+    int rc;
+    std::string newPassword;
+    int userID;
+
+    rc = sqlite3_open("users.db", &db);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Error opening SQL database: " << sqlite3_errmsg(db) << std::endl;
+        return;
+    }
+
+    const char* findUserIDQuery = "SELECT userID FROM users WHERE email = ?"; // Replace with a condition to identify the user, e.g., by email or username
+    rc = sqlite3_prepare_v2(db, findUserIDQuery, -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare SQL statement: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return;
+    }
+
+    rc = sqlite3_bind_text(stmt, 1, email.c_str(), email.length(), SQLITE_STATIC);
+
+    rc = sqlite3_step(stmt);
+
+    if (rc == SQLITE_ROW)
+    {
+        userID = sqlite3_column_int(stmt, 0);
+        std::cout << "User passsword reset authorized, confirming user ID: " << userID << std::endl;
+    }
+    else
+    {
+        std::cerr << "Failed to attain userID" << std::endl;
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return;
+    }
+
+    std::string updatePasswordQuery = "UPDATE users SET password = ? WHERE userID = ?";
+
+    rc = sqlite3_prepare_v2(db, updatePasswordQuery.c_str(), -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Error preparing SQL statement: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_close(db);
+        return;
+    }
+
+    std::cout << "Enter a new password" << std::endl;
+    std::getline(std::cin, newPassword);
+
+    rc = sqlite3_bind_text(stmt, 1, newPassword.c_str(), -1, SQLITE_STATIC);
+    rc = sqlite3_bind_int(stmt, 2, userID);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Error binding parameters: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return;
+    }
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE)
+    {
+        std::cerr << "Error updating password: " << sqlite3_errmsg(db) << std::endl;
+    }
+    else
+    {
+        std::cout << "User password has successfully been changed!" << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+}
+
+
+void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string email)
+{
+    int userChoice;
+
+    if (inputtedOTP == generatedOTP)
+    {
+        std::cout << "OTP is valid, success." << std::endl; // should both values be the same, the users identity will be successfully confirmed
+        newPassword(email); // user will now be able to create a new password
+    }
+    else
+    {
+        std::cout << "OTP is invalid, please try again." << std::endl;
+        std::cout << "Would you like to be sent another OTP via email? (1 for yes, 2 for no)" << std::endl;
+        std::cin >> userChoice;
+
+        if (userChoice == 1)
+        {
+            otpChances--; // decrement otp chances to prevent spam otp requests
+            std::cout << "OTP requests remaining: " << otpChances << std::endl; // testing measure to ensure that the decrementation is working correctly, will be removed soon should it work fine
+            OTP(email); // allow for the user to get an OTP request again
+
+        }
+    }
+}
+
+
+int generateOTP()
+{
+    int storedOTP = 24139;
+    return storedOTP; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
+
+
+}
+
+
+void OTP(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
+{
+    CURL* curl;
+    CURLcode res; // CURL libraries
+    sqlite3* db; // SQL libraries
+    sqlite3_stmt* stmt;
+    int inputtedOTP; // users input when asked for OTP
+    int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
+
+    // API code to request for email and send a OTP to reset password
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    curl = curl_easy_init();
+
+    if (curl)
+    {
+        std::string data;
+
+        // headers and authentication
+        std::string endpoint = "https://api.postmarkapp.com/email";
+        curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+
+
+        // headers for HTTP request 
+        struct curl_slist* headers = nullptr;
+        headers = curl_slist_append(headers, "Accept: application/json");
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, "X-Postmark-Server-Token: fe01fb97-a4c8-47da-9ccc-9b73319ab3ad"); // once again, change this in the future to reference a directory in a filesystem
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        int generatedOTP = generateOTP(); // function that will generate a random OTP number for the user
+        std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email + "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " + std::to_string(generatedOTP) + "\"}";
+
+
+        res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK)
+        {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+
+        }
+        else
+        {
+            std::cout << "OTP sent successfully!" << std::endl;
+            std::cout << "Enter your OTP" << std::endl; // user will receive the OTP via their email and be asked to enter it to confirm their identity 
+            std::cin >> inputtedOTP;
+            verifyOTP(inputtedOTP, generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
+
+        }
+
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+
+    }
+
+    curl_global_cleanup();
+}
+
+
 bool isValidEmailFormat(std::string email)
 {
     size_t atPosition = email.find("@");
@@ -642,188 +822,6 @@ void choice()
         choice(); // recurse until correct choice is inputted
     }
     }
-}
-
-
-
-void newPassword(std::string email)
-{
-    sqlite3* db;
-    sqlite3_stmt* stmt;
-    int rc;
-    std::string newPassword;
-    int userID;
-
-    rc = sqlite3_open("users.db", &db);
-
-    if (rc != SQLITE_OK)
-    {
-        std::cerr << "Error opening SQL database: " << sqlite3_errmsg(db) << std::endl;
-        return;
-    }
-
-    const char* findUserIDQuery = "SELECT userID FROM users WHERE email = ?"; // Replace with a condition to identify the user, e.g., by email or username
-    rc = sqlite3_prepare_v2(db, findUserIDQuery, -1, &stmt, nullptr);
-
-    if (rc != SQLITE_OK)
-    {
-        std::cerr << "Failed to prepare SQL statement: " << sqlite3_errmsg(db) << std::endl;
-        sqlite3_close(db);
-        return;
-    }
-
-    rc = sqlite3_bind_text(stmt, 1, email.c_str(), email.length(), SQLITE_STATIC);
-
-    rc = sqlite3_step(stmt);
-
-    if (rc == SQLITE_ROW)
-    {
-        userID = sqlite3_column_int(stmt, 0);
-        std::cout << "User passsword reset authorized, confirming user ID: " << userID << std::endl;
-    }
-    else
-    {
-        std::cerr << "Failed to attain userID" << std::endl;
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return;
-    }
-
-    std::string updatePasswordQuery = "UPDATE users SET password = ? WHERE userID = ?";
-
-    rc = sqlite3_prepare_v2(db, updatePasswordQuery.c_str(), -1, &stmt, nullptr);
-
-    if (rc != SQLITE_OK)
-    {
-        std::cerr << "Error preparing SQL statement: " << sqlite3_errmsg(db) << std::endl;
-        sqlite3_close(db);
-        return;
-    }
-
-    std::cout << "Enter a new password" << std::endl;
-    std::getline(std::cin, newPassword);
-
-    rc = sqlite3_bind_text(stmt, 1, newPassword.c_str(), -1, SQLITE_STATIC);
-    rc = sqlite3_bind_int(stmt, 2, userID);
-
-    if (rc != SQLITE_OK)
-    {
-        std::cerr << "Error binding parameters: " << sqlite3_errmsg(db) << std::endl;
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return;
-    }
-
-    rc = sqlite3_step(stmt);
-    if (rc != SQLITE_DONE)
-    {
-        std::cerr << "Error updating password: " << sqlite3_errmsg(db) << std::endl;
-    }
-    else
-    {
-        std::cout << "User password has successfully been changed!" << std::endl;
-    }
-
-    sqlite3_finalize(stmt);
-    sqlite3_close(db);
-}
-
-
-
-void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string email)
-{
-    int userChoice;
-
-    if (inputtedOTP == generatedOTP)
-    {
-        std::cout << "OTP is valid, success." << std::endl; // should both values be the same, the users identity will be successfully confirmed
-        newPassword(email); // user will now be able to create a new password
-    }
-    else
-    {
-        std::cout << "OTP is invalid, please try again." << std::endl;
-        std::cout << "Would you like to be sent another OTP via email? (1 for yes, 2 for no)" << std::endl;
-        std::cin >> userChoice;
-
-        if (userChoice == 1)
-        {
-            otpChances--; // decrement otp chances to prevent spam otp requests
-            std::cout << "OTP requests remaining: " << otpChances << std::endl; // testing measure to ensure that the decrementation is working correctly, will be removed soon should it work fine
-            OTP(email); // allow for the user to get an OTP request again
-
-        }
-    }
-}
-
-
-int generateOTP()
-{
-    int storedOTP = 24139;
-    return storedOTP; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
-
-
-}
-
-
-void OTP(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
-{
-    CURL* curl;
-    CURLcode res; // CURL libraries
-    sqlite3* db; // SQL libraries
-    sqlite3_stmt* stmt;
-    int inputtedOTP; // users input when asked for OTP
-    int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
-
-    // API code to request for email and send a OTP to reset password
-
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-
-    curl = curl_easy_init();
-
-    if (curl)
-    {
-        std::string data;
-
-        // headers and authentication
-        std::string endpoint = "https://api.postmarkapp.com/email";
-        curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
-
-
-        // headers for HTTP request 
-        struct curl_slist* headers = nullptr;
-        headers = curl_slist_append(headers, "Accept: application/json");
-        headers = curl_slist_append(headers, "Content-Type: application/json");
-        headers = curl_slist_append(headers, "X-Postmark-Server-Token: fe01fb97-a4c8-47da-9ccc-9b73319ab3ad"); // once again, change this in the future to reference a directory in a filesystem
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-        int generatedOTP = generateOTP(); // function that will generate a random OTP number for the user
-        std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email + "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " + std::to_string(generatedOTP) + "\"}";
-
-
-        res = curl_easy_perform(curl);
-
-        if (res != CURLE_OK)
-        {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-
-        }
-        else
-        {
-            std::cout << "OTP sent successfully!" << std::endl;
-            std::cout << "Enter your OTP" << std::endl; // user will receive the OTP via their email and be asked to enter it to confirm their identity 
-            std::cin >> inputtedOTP;
-            verifyOTP(inputtedOTP, generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
-
-        }
-
-        curl_slist_free_all(headers);
-        curl_easy_cleanup(curl);
-
-    }
-
-    curl_global_cleanup();
 }
 
 
