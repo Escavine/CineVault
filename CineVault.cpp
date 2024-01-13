@@ -247,7 +247,7 @@ void isLoggedin(int userChoice, int userAttempts) // user attempts for login to 
     {
         int UID = sqlite3_column_int(stmt, 0); // this will fetch the userID
         std::string individualName = (const char*)sqlite3_column_text(stmt, 1); // fetch individual name
-        std::string individualSurname = (const char*)sqlite3_column_text(stmt, 2); // fetch individual password
+        std::string individualSurname = (const char*)sqlite3_column_text(stmt, 2); // fetch individual surname
         std::cout << "userID: " << UID << std::endl;
         std::cout << "User Authenticated" << std::endl;
         loginSession(UID, individualName, individualSurname, switchChances); // lead user to their login session
@@ -538,8 +538,80 @@ void signUp(int userChoice)
 
 
 void newPassword()
-{
+{ 
+    sqlite3* db; // SQL usage
+    sqlite3_stmt* stmt;
+    int rc; // return code
+    std::string newPassword; // users new password will be stored here
+
     // once the users OTP has been confirmed, then the user will be redirected here
+
+    rc = sqlite3_open("users.db", &db);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Error opening SQL database" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
+    }
+
+
+
+    const char* finduserID = "SELECT * FROM users";
+    rc = sqlite3_prepare_v2(db, finduserID, -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare SQL statement" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
+    }
+
+
+    int result = sqlite3_step(stmt);
+
+    if (result == SQLITE_ROW)
+    {
+        int UID = sqlite3_column_int(stmt, 0); // this will fetch the userID
+        std::cout << "userID: " << UID << std::endl;
+    }
+    else
+    {
+        std::cerr << "Failed to attain userID" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
+
+    }
+
+    const char* changePassword = "UPDATE users SET password = ?, WHERE userID = " + UID.to_string(); // insert actual userID
+
+    rc = sqlite3_prepare_v2(db, changePassword, -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Error preparing SQL statement" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
+    }
+
+    
+    std::cout << "Enter a new password" << std::endl;
+    std::cin >> newPassword;
+
+    rc = sqlite3_exec(db, changePassword, 0, 0, 0);
+
+    if (rc != SQLITE_OK)
+    {
+        std::cout << "Error changing password" << "\n"
+            << "Error code: " << sqlite3_errcode(db) << "\n"
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
+    }
+    else
+    {
+        std::cout << "User password has successfully been changed!" << std::endl;
+        choice(); // lead the user back to the signup/login form
+    }
+
 }
 
 
@@ -558,7 +630,8 @@ void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string em
 
     if (inputtedOTP == generatedOTP)
     {
-        std::cout << "OTP is valid, success." << std::endl;
+        std::cout << "OTP is valid, success." << std::endl; // should both values be the same, the users identity will be successfully confirmed
+        newPassword(); // user will now be able to create a new password
     }
     else
     {
@@ -574,7 +647,6 @@ void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string em
 
         }
     }
-    // compares stored otp to the otp entered by the suer
 }
 
 
@@ -585,7 +657,7 @@ void OTP(std::string email) // should the users email exist in the database, the
     sqlite3* db; // SQL libraries
     sqlite3_stmt* stmt;
     int inputtedOTP; // users input when asked for OTP
-    int otpChances = 3; // users will get 3 chances to input the correct OTP
+    int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
 
     // API code to request for email and send a OTP to reset password
     
@@ -612,7 +684,7 @@ void OTP(std::string email) // should the users email exist in the database, the
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
         int generatedOTP = generateOTP(); // function that will generate a random OTP number for the user
-        std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email + "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " + generatedOTP.c_str() + "\"}";
+        std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email + "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " + std::to_string(generatedOTP) + "\"}";
 
 
         res = curl_easy_perform(curl);
