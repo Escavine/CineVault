@@ -621,6 +621,7 @@ void newPassword(std::string email)
 }
 
 
+
 void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string email)
 {
     int userChoice;
@@ -640,7 +641,12 @@ void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string em
         {
             otpChances--; // decrement otp chances to prevent spam otp requests
             std::cout << "OTP requests remaining: " << otpChances << std::endl; // testing measure to ensure that the decrementation is working correctly, will be removed soon should it work fine
-            OTP(email); // allow for the user to get an OTP request again
+            std::cout << "As of present this feature is currently in development, please wait." << std::endl; // will need to start using .h files to properly utilise functions
+        }
+        else if (userChoice == 2)
+        {
+            std::cout << "You will be redirected back to the menu" << std::endl;
+            menuAfterSignup();
 
         }
     }
@@ -718,30 +724,15 @@ void OTP(std::string email) // should the users email exist in the database, the
 }
 
 
-bool isValidEmailFormat(std::string email)
-{
-    size_t atPosition = email.find("@");
-    size_t dotPosition = email.find(".");
-
-
-    if (atPosition != std::string::npos && dotPosition != std::string::npos && atPosition < dotPosition)
-    {
-        return true;
-        // redirect the user to an authentication system via their email after signup with the google API 
-    }
-    else
-    {
-        return false;
-    }
-
-}
-
 void checkForUserEmail(int userChoice, int userAttempts)
 {
     sqlite3* db; // sql libraries
     sqlite3_stmt* stmt;
     int rc; // return code
     std::string email; // email
+    size_t atPosition = email.find("@"); // these characters will be searched for within the email variable to ensure that it is indeed in correct format
+    size_t dotPosition = email.find(".");
+
 
     // firstly, we will check if the users email exists on the system
 
@@ -758,11 +749,12 @@ void checkForUserEmail(int userChoice, int userAttempts)
     const char* query = "SELECT email FROM users WHERE email = ?"; // SQL prompt
     rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr); // prepare the given statement
 
-    std::cout << "Forgot password" << std::endl;
+    std::cout << "Forgot password" << "\n" << std::endl;
     std::cout << "Enter your email address" << std::endl;
     std::cin >> email;
 
-    if (isValidEmailFormat(email))
+
+    if (atPosition != std::string::npos && dotPosition != std::string::npos && atPosition < dotPosition)
     {
         std::cout << "User email format is valid." << std::endl;
         OTP(email); // direct the user to the forgot password function
