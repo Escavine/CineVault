@@ -537,18 +537,32 @@ void signUp(int userChoice)
 }
 
 
-std::string generateOTP()
+void newPassword()
 {
-    return "24139"; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
+    // once the users OTP has been confirmed, then the user will be redirected here
+}
+
+
+int generateOTP()
+{
+    return 24139; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
 
 }
 
-void forgotPassword(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
+
+void verifiedOTP(int otp)
+{
+    // compares stored otp to the otp entered by the suer
+}
+
+
+void OTP(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
 {
     CURL* curl;
     CURLcode res; // CURL libraries
     sqlite3* db; // SQL libraries
     sqlite3_stmt* stmt;
+    int 
 
     // API code to request for email and send a OTP to reset password
     
@@ -560,16 +574,22 @@ void forgotPassword(std::string email) // should the users email exist in the da
     {
         std::string data;
 
-
         // headers and authentication
-        struct curl_slist* headers = nullptr;
         std::string endpoint = "https://api.postmarkapp.com/email"; 
         curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 
-        std::string otp = generateOTP(); // function that will generate a random OTP number for the user
-        std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email + "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " + otp + "\"}";
+
+        // headers for HTTP request 
+        struct curl_slist* headers = nullptr;
+        headers = curl_slist_append(headers, "Accept: application/json");
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, "X-Postmark-Server-Token: fe01fb97-a4c8-47da-9ccc-9b73319ab3ad"); // once again, change this in the future to reference a directory in a filesystem
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        int generatedOTP = generateOTP(); // function that will generate a random OTP number for the user
+        std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email + "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " + generatedOTP.c_str() + "\"}";
 
 
         res = curl_easy_perform(curl);
@@ -582,6 +602,8 @@ void forgotPassword(std::string email) // should the users email exist in the da
         else
         {
             std::cout << "OTP sent successfully!" << std::endl;
+            std::cout << "Enter your OTP" << std::endl; // when user receives OTP
+
         }
 
         curl_slist_free_all(headers);
@@ -622,7 +644,7 @@ void checkForUserEmail(int userChoice, int userAttempts)
     if (isValidEmailFormat(email))
     {
         std::cout << "User email format is valid." << std::endl;
-        forgotPassword(email); // direct the user to the forgot password function
+        OTP(email); // direct the user to the forgot password function
     }
     else
     {
