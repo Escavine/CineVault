@@ -51,7 +51,7 @@ void addMovies() // this function will allow for the insertion of new movies to 
         std::cout << "Enter the movie you'd like to search for" << std::endl;
         std::cin >> movieTitle;
 
-        std::string apiKey = "1d9b5025";  // API key
+        std::string apiKey = "1d9b5025";  // future reference: since you are uploading on a public repo, reference this from a file rather than expose the ID
         std::string apiUrl = "http://www.omdbapi.com/?apikey=" + apiKey + "&t=" + movieTitle;
         std::cout << apiUrl << std::endl; // testing measure: will be removed soon
 
@@ -539,7 +539,7 @@ void signUp(int userChoice)
 
 std::string generateOTP()
 {
-    return "24139"; // this will be changed by introducing some randint library or something similiar
+    return "24139"; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
 
 }
 
@@ -560,20 +560,38 @@ void forgotPassword(std::string email) // should the users email exist in the da
     {
         std::string data;
 
-        std::string endpoint = "https://api.postmarkapp.com/email";
 
+        // headers and authentication
+        struct curl_slist* headers = nullptr;
+        std::string endpoint = "https://api.postmarkapp.com/email"; 
         curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 
         std::string otp = generateOTP(); // function that will generate a random OTP number for the user
+        std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email + "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " + otp + "\"}";
 
-        // continue from here
+
+        res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK)
+        {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+
+        }
+        else
+        {
+            std::cout << "OTP sent successfully!" << std::endl;
+        }
+
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+
     }
 
-
-
+    curl_global_cleanup();
 }
+
 
 void checkForUserEmail(int userChoice, int userAttempts)
 {
@@ -597,12 +615,13 @@ void checkForUserEmail(int userChoice, int userAttempts)
     const char* query = "SELECT email FROM users WHERE email = ?"; // SQL prompt
     rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr); // prepare the given statement
 
+    std::cout << "Forgot password" << std::endl;
     std::cout << "Enter your email address" << std::endl;
     std::cin >> email;
 
     if (isValidEmailFormat(email))
     {
-        std::cout << "Email format is valid" << std::endl;
+        std::cout << "User email format is valid." << std::endl;
         forgotPassword(email); // direct the user to the forgot password function
     }
     else
