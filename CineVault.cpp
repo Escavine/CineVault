@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <vector>
 #include <sodium.h> // for encryption purposes
+#include <botan/base32.h>
 
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) // for cURL API usage
@@ -654,7 +655,7 @@ void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string em
 
 
 
-void sendOTPByEmail(const std::string& email, int generatedOTP)
+void sendOTPByEmail(std::string& email, int generatedOTP)
 {
     // Construct email content
     std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email +
@@ -663,19 +664,26 @@ void sendOTPByEmail(const std::string& email, int generatedOTP)
 }
 
 
-std::string generateOTP(std::string encryptedText, std::string email)
+std::string generateOTP(std::string encryptedText, std::string email, uint64_t time_step = 30, size_t digits = 6)
 {
     if (sodium_init() < 0) {
         std::cerr << "Error initiating libsodium library" << std::endl; // ensures that libsodium can be used
+        return "";
     }
 
-    
+
+    // convert the base32 text to binary
+    std::vector<uint8_t> decoded_key(crypto_secretbox_KEYBYTES);
+    Botan::secure_vector<uint8_t> binaryData = Botan::base32_decode(encryptedText); // binary conversion using botan
 
 
+    // retrieve the current time
+    auto current_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count(); 
 
 
 
 }
+
 
 
 void OTP(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
