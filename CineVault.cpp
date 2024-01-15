@@ -5,11 +5,9 @@
 #include <sqlite3.h> // Database usage
 #include <chrono>
 #include <string>
-#include <stdio.h> 
+#include <stdio.h>
+#include <botan/hex.h> // encrypt passwords + otp should the user forget their password
 
-// Append the signup details to the users database to allow for them to login         
-// Create a user movie watchlist database to store the information of the movie/movies along with the given movie name for signUp function
-// The user movie watchlist database has to consist of (userID as a foreign key, watchStatus as a TEXT which can only hold WATCHED, WATCHING, DROPPED ETC, movieInfo and movieName)
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) // for cURL API usage
 {
@@ -653,6 +651,16 @@ void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string em
 }
 
 
+
+void sendOTPByEmail(const std::string& email, int generatedOTP)
+{
+    // Construct email content
+    std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email +
+        "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " +
+        std::to_string(generatedOTP) + "\"}";
+}
+
+
 int generateOTP()
 {
     int storedOTP = 24139;
@@ -696,10 +704,10 @@ void OTP(std::string email) // should the users email exist in the database, the
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
         int generatedOTP = generateOTP(); // function that will generate a random OTP number for the user
-        std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email + "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " + std::to_string(generatedOTP) + "\"}";
-
+        sendOTPByEmail(email, generatedOTP);
 
         res = curl_easy_perform(curl);
+
 
         if (res != CURLE_OK)
         {
@@ -715,8 +723,8 @@ void OTP(std::string email) // should the users email exist in the database, the
 
         }
 
-        curl_slist_free_all(headers);
-        curl_easy_cleanup(curl);
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
 
     }
 
