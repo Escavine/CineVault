@@ -6,7 +6,9 @@
 #include <chrono>
 #include <string>
 #include <stdio.h>
-#include <botan/hex.h> // encrypt passwords + otp should the user forget their password
+#include <iomanip>
+#include <vector>
+#include <sodium.h> // for encryption purposes
 
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) // for cURL API usage
@@ -661,10 +663,16 @@ void sendOTPByEmail(const std::string& email, int generatedOTP)
 }
 
 
-int generateOTP()
+std::string generateOTP(std::string encryptedText, std::string email)
 {
-    int storedOTP = 24139;
-    return storedOTP; // this will be changed by introducing some randint library or something similiar, for now it'll remain static
+    if (sodium_init() < 0) {
+        std::cerr << "Error initiating libsodium library" << std::endl; // ensures that libsodium can be used
+    }
+
+    
+
+
+
 
 
 }
@@ -681,54 +689,55 @@ void OTP(std::string email) // should the users email exist in the database, the
 
     // API code to request for email and send a OTP to reset password
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+    // curl_global_init(CURL_GLOBAL_DEFAULT);
 
-    curl = curl_easy_init();
+    // curl = curl_easy_init();
 
     if (curl)
     {
-        std::string data;
+        // std::string data;
 
         // headers and authentication
-        std::string endpoint = "https://api.postmarkapp.com/email";
-        curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+        // std::string endpoint = "https://api.postmarkapp.com/email";
+        // curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
+        // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        // curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 
 
         // headers for HTTP request 
-        struct curl_slist* headers = nullptr;
-        headers = curl_slist_append(headers, "Accept: application/json");
-        headers = curl_slist_append(headers, "Content-Type: application/json");
-        headers = curl_slist_append(headers, "X-Postmark-Server-Token: fe01fb97-a4c8-47da-9ccc-9b73319ab3ad"); // once again, change this in the future to reference a directory in a filesystem
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        // struct curl_slist* headers = nullptr;
+        // headers = curl_slist_append(headers, "Accept: application/json");
+        // headers = curl_slist_append(headers, "Content-Type: application/json");
+        // headers = curl_slist_append(headers, "X-Postmark-Server-Token: fe01fb97-a4c8-47da-9ccc-9b73319ab3ad"); // once again, change this in the future to reference a directory in a filesystem
+        // curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-        int generatedOTP = generateOTP(); // function that will generate a random OTP number for the user
-        sendOTPByEmail(email, generatedOTP);
+        std::string encryptedText = "JBSWY3DPEHPK3PXP";
+        std::string generatedOTP = generateOTP(encryptedText, email); // function that will generate a random OTP number for the user
+        // sendOTPByEmail(email, generatedOTP);
 
-        res = curl_easy_perform(curl);
+        // res = curl_easy_perform(curl);
 
 
-        if (res != CURLE_OK)
+        // if (res != CURLE_OK)
         {
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 
         }
-        else
+        // else
         {
             std::cout << "OTP sent successfully!" << std::endl;
             std::cout << "Enter your OTP" << std::endl; // user will receive the OTP via their email and be asked to enter it to confirm their identity 
             std::cin >> inputtedOTP;
-            verifyOTP(inputtedOTP, generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
+            // verifyOTP(inputtedOTP, generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
 
         }
 
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
+    // curl_slist_free_all(headers);
+    // curl_easy_cleanup(curl);
 
     }
 
-    curl_global_cleanup();
+    // curl_global_cleanup();
 }
 
 boolean isValidEmailAddress(std::string email)
@@ -849,6 +858,10 @@ int main() {
     {
         std::cerr << "Database failed to open\n" << std::endl;
         return rc;
+    }
+
+    if (sodium_init() < 0) { 
+        /* panic! the library couldn't be initialized; it is not safe to use */
     }
 
 
