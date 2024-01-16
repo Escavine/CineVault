@@ -626,12 +626,17 @@ void newPassword(std::string email)
 
 
 
-void verifyOTP(std::string inputtedOTP, std::string generatedOTP, int otpChances, std::string email)
+void verifyOTP(std::string generatedOTP, int otpChances, std::string email)
 {
-    int userChoice, userResendOTP;
+    int userResendOTP;
     boolean otpConfo = FALSE;
     boolean resendOTP = FALSE;
-    
+    std::string inputtedOTP; 
+
+    std::cout << "OTP requests remaining: " << otpChances << std::endl; // testing measure to ensure that the decrementation is working correctly, will be removed soon should it work     
+
+    std::cout << "Enter your OTP" << std::endl; // user will receive the OTP via their email and be asked to enter it to confirm their identity 
+    std::cin >> inputtedOTP;
 
     do
     {
@@ -645,28 +650,26 @@ void verifyOTP(std::string inputtedOTP, std::string generatedOTP, int otpChances
         }
         else
         {
-            std::cout << "OTP is invalid, please try again." << std::endl;
-            std::cout << "Reenter OTP: " << std::endl; // allow for the user to re-enter their OTP
-            std::cin >> userChoice;
-            otpChances--; // decrement otp chances to prevent spam otp requests
-            std::cout << "OTP requests remaining: " << otpChances << std::endl; // testing measure to ensure that the decrementation is working correctly, will be removed soon should it work     
+            std::cout << "OTP is invalid, please try again." << "\n" << std::endl;
+            verifyOTP(generatedOTP, otpChances - 1, email);
 
             if (otpChances == 0)
             {
-                std::cout << "Too many requests have been made" << std::endl;
+                std::cout << "Too many requests have been made, requests have been stopped to prevent spam" << std::endl;
                 std::cout << "Would you like to have a OTP sent to you again? (1 for yes and 2 for no)" << std::endl;
                 std::cin >> userResendOTP;
 
                 if (userResendOTP == 1)
                 {
-                    std::cout << "This feature is currently in the works" << std::endl;
+                    std::cout << "Not working yet :3" << std::endl;
                     exit(0);
                 }
                 else if (userResendOTP == 2)
                 {
-                    std::cout << ""
+                    menuAfterSignup(); // lead user to the menu
+                }
 
-
+            }
         }
     } while (otpConfo == FALSE); 
 }
@@ -752,9 +755,7 @@ void OTP(std::string email) // should the users email exist in the database, the
         else
         {
             std::cout << "OTP sent successfully!" << std::endl;
-            std::cout << "Enter your OTP" << std::endl; // user will receive the OTP via their email and be asked to enter it to confirm their identity 
-            std::cin >> inputtedOTP;
-            verifyOTP(inputtedOTP, generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
+            verifyOTP(generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
 
         }
 
