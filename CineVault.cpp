@@ -626,7 +626,7 @@ void newPassword(std::string email)
 
 
 
-void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string email)
+void verifyOTP(std::string inputtedOTP, std::string generatedOTP, int otpChances, std::string email)
 {
     int userChoice;
 
@@ -658,28 +658,33 @@ void verifyOTP(int inputtedOTP, int generatedOTP, int otpChances, std::string em
 
 
 
-void sendOTPByEmail(std::string& email, int generatedOTP)
+void sendOTPByEmail(std::string& email, std::string generatedOTP)
 {
     // Construct email content
-    std::string emailContent = "{\"From\": \"miahk@roehampton.ac.uk\", \"To\": \"" + email +
+    std::string emailContent = "{\"From\": \"thelollipopcreamytber@gmail.com\", \"To\": \"" + email +
         "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " +
-        std::to_string(generatedOTP) + "\"}";
+        (generatedOTP) + "\"}";
 }
 
 
-std::string generateOTP(std::string encryptedText, std::string email, uint64_t counter)
+std::string generateOTP(std::string email, uint64_t counter)
 {
-    CryptoPP::HMAC<CryptoPP::SHA1> hmac((const byte*)encryptedText.data(), encryptedText.size();
+
+    // generating TOTP
+    CryptoPP::HMAC<CryptoPP::SHA1> hmac((const byte*)email.data(), email.size());
     byte digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE];
     hmac.Update((const byte*)&counter, sizeof(counter));
 
+    // truncating the HMAC value to 6 digits
     int offset = digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE - 10] & 0x0F;
-    int32_t truncatedHash = 
+    int32_t truncatedHash = (digest[offset] & 0x7F) << 24 | (digest[offset + 1] & 0xFF) << 16 | (digest[offset + 2] & 0xFF) << 8 | (digest[offset + 3] & 0xFF);
     
+    int otp = truncatedHash % 1000000;
+    std::ostringstream oss;
+    oss << std::setw(6) << std::setfill('0') << otp;
 
-
-
-
+    return oss.str();
+    
 
 }
 
@@ -691,60 +696,57 @@ void OTP(std::string email) // should the users email exist in the database, the
     CURLcode res; // CURL libraries
     sqlite3* db; // SQL libraries
     sqlite3_stmt* stmt;
-    int inputtedOTP; // users input when asked for OTP
+    std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
 
     // API code to request for email and send a OTP to reset password
 
-    // curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl_global_init(CURL_GLOBAL_DEFAULT);
 
-    // curl = curl_easy_init();
+    curl = curl_easy_init();
 
     if (curl)
     {
-        // std::string data;
+        std::string data;
 
         // headers and authentication
-        // std::string endpoint = "https://api.postmarkapp.com/email";
-        // curl_easy_setopt(curl, CURLOPT_URL, endpoint.c_str());
-        // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        // curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+        curl_easy_setopt(curl, CURLOPT_URL, email.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 
 
         // headers for HTTP request 
-        // struct curl_slist* headers = nullptr;
-        // headers = curl_slist_append(headers, "Accept: application/json");
-        // headers = curl_slist_append(headers, "Content-Type: application/json");
-        // headers = curl_slist_append(headers, "X-Postmark-Server-Token: fe01fb97-a4c8-47da-9ccc-9b73319ab3ad"); // once again, change this in the future to reference a directory in a filesystem
-        // curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-        std::string encryptedText = "JBSWY3DPEHPK3PXP";
-        std::string generatedOTP = generateOTP(encryptedText, email); // function that will generate a random OTP number for the user
-        // sendOTPByEmail(email, generatedOTP);
-
-        // res = curl_easy_perform(curl);
 
 
-        // if (res != CURLE_OK)
+
+        // current time in seconds for TOTP encryption
+        time_t counter = time(0);
+
+        std::string generatedOTP = generateOTP(email, counter); // function that will generate a random OTP number for the user
+        sendOTPByEmail(email, generatedOTP);
+
+        res = curl_easy_perform(curl);
+
+
+        if (res != CURLE_OK)
         {
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 
         }
-        // else
+        else
         {
             std::cout << "OTP sent successfully!" << std::endl;
             std::cout << "Enter your OTP" << std::endl; // user will receive the OTP via their email and be asked to enter it to confirm their identity 
             std::cin >> inputtedOTP;
-            // verifyOTP(inputtedOTP, generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
+            verifyOTP(inputtedOTP, generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
 
         }
 
-    // curl_slist_free_all(headers);
-    // curl_easy_cleanup(curl);
+    curl_easy_cleanup(curl);
 
     }
 
-    // curl_global_cleanup();
+    curl_global_cleanup();
 }
 
 boolean isValidEmailAddress(std::string email)
