@@ -628,32 +628,47 @@ void newPassword(std::string email)
 
 void verifyOTP(std::string inputtedOTP, std::string generatedOTP, int otpChances, std::string email)
 {
-    int userChoice;
+    int userChoice, userResendOTP;
+    boolean otpConfo = FALSE;
+    boolean resendOTP = FALSE;
+    
 
-    if (inputtedOTP == generatedOTP)
+    do
     {
-        std::cout << "OTP is valid, success." << std::endl; // should both values be the same, the users identity will be successfully confirmed
-        newPassword(email); // user will now be able to create a new password
-    }
-    else
-    {
-        std::cout << "OTP is invalid, please try again." << std::endl;
-        std::cout << "Would you like to be sent another OTP via email? (1 for yes, 2 for no)" << std::endl;
-        std::cin >> userChoice;
 
-        if (userChoice == 1)
+        if (inputtedOTP == generatedOTP)
         {
+            std::cout << "OTP is valid, success." << std::endl; // should both values be the same, the users identity will be successfully confirmed
+            otpConfo = TRUE;
+            newPassword(email); // user will now be able to create a new password
+          
+        }
+        else
+        {
+            std::cout << "OTP is invalid, please try again." << std::endl;
+            std::cout << "Reenter OTP: " << std::endl; // allow for the user to re-enter their OTP
+            std::cin >> userChoice;
             otpChances--; // decrement otp chances to prevent spam otp requests
-            std::cout << "OTP requests remaining: " << otpChances << std::endl; // testing measure to ensure that the decrementation is working correctly, will be removed soon should it work fine
-            std::cout << "As of present this feature is currently in development, please wait." << std::endl; // will need to start using .h files to properly utilise functions
-        }
-        else if (userChoice == 2)
-        {
-            std::cout << "You will be redirected back to the menu" << std::endl;
-            menuAfterSignup();
+            std::cout << "OTP requests remaining: " << otpChances << std::endl; // testing measure to ensure that the decrementation is working correctly, will be removed soon should it work     
+
+            if (otpChances == 0)
+            {
+                std::cout << "Too many requests have been made" << std::endl;
+                std::cout << "Would you like to have a OTP sent to you again? (1 for yes and 2 for no)" << std::endl;
+                std::cin >> userResendOTP;
+
+                if (userResendOTP == 1)
+                {
+                    std::cout << "This feature is currently in the works" << std::endl;
+                    exit(0);
+                }
+                else if (userResendOTP == 2)
+                {
+                    std::cout << ""
+
 
         }
-    }
+    } while (otpConfo == FALSE); 
 }
 
 
@@ -722,7 +737,7 @@ void OTP(std::string email) // should the users email exist in the database, the
         time_t counter = time(0);
 
         std::string generatedOTP = generateOTP(email, counter); // function that will generate a random OTP number for the user
-        std::cout << "OTP: " << generatedOTP << "(testing measure)" << std::endl;
+        std::cout << "OTP: " << generatedOTP << " (testing measure)" << std::endl;
 
         sendOTPByEmail(email, generatedOTP);
 
