@@ -10,7 +10,7 @@
 #include <vector>
 #include <sodium.h> // for encryption purposes
 #include <botan/base32.h>
-
+#include <cmath>
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) // for cURL API usage
 {
@@ -679,6 +679,18 @@ std::string generateOTP(std::string encryptedText, std::string email, uint64_t t
 
     // retrieve the current time
     auto current_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count(); 
+
+    // calculate the counter value
+    uint64_t counter = current_time / time_step;
+
+    // convert the counter to the network byte order (big endian)
+    counter = _byteswap_uint64(counter);
+
+    uint8_t hmac[crypto_auth_hmacsha256_BYTES];
+    crypto_auth_hmacsha256(hmac, reinterpret_cast<const unsigned char*>(&counter), sizeof(counter), binaryData.data());
+
+
+
 
 
 
