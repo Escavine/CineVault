@@ -7,4 +7,4 @@ This repository is ongoing development, and will be including more libraries and
 ## Libraries used
 - sqlite3
 - cURL API
-- crpyto++ 
+- crypto++
