@@ -7,10 +7,13 @@
 #include <string>
 #include <stdio.h>
 #include <iomanip>
-#include <vector>
-#include <sodium.h> // for encryption purposes
-#include <botan/base32.h>
-#include <cmath>
+#include <ctime>
+#include <cryptopp/hmac.h>
+#include <cryptopp/sha.h> // encryption usage
+#include <cryptopp/base32.h>
+#include <cryptopp/filters.h>
+
+
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) // for cURL API usage
 {
@@ -664,31 +667,15 @@ void sendOTPByEmail(std::string& email, int generatedOTP)
 }
 
 
-std::string generateOTP(std::string encryptedText, std::string email, uint64_t time_step = 30, size_t digits = 6)
+std::string generateOTP(std::string encryptedText, std::string email, uint64_t counter)
 {
-    if (sodium_init() < 0) {
-        std::cerr << "Error initiating libsodium library" << std::endl; // ensures that libsodium can be used
-        return "";
-    }
+    CryptoPP::HMAC<CryptoPP::SHA1> hmac((const byte*)encryptedText.data(), encryptedText.size();
+    byte digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE];
+    hmac.Update((const byte*)&counter, sizeof(counter));
 
-
-    // convert the base32 text to binary
-    std::vector<uint8_t> decoded_key(crypto_secretbox_KEYBYTES);
-    Botan::secure_vector<uint8_t> binaryData = Botan::base32_decode(encryptedText); // binary conversion using botan
-
-
-    // retrieve the current time
-    auto current_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count(); 
-
-    // calculate the counter value
-    uint64_t counter = current_time / time_step;
-
-    // convert the counter to the network byte order (big endian)
-    counter = _byteswap_uint64(counter);
-
-    uint8_t hmac[crypto_auth_hmacsha256_BYTES];
-    crypto_auth_hmacsha256(hmac, reinterpret_cast<const unsigned char*>(&counter), sizeof(counter), binaryData.data());
-
+    int offset = digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE - 10] & 0x0F;
+    int32_t truncatedHash = 
+    
 
 
 
@@ -878,10 +865,6 @@ int main() {
     {
         std::cerr << "Database failed to open\n" << std::endl;
         return rc;
-    }
-
-    if (sodium_init() < 0) { 
-        /* panic! the library couldn't be initialized; it is not safe to use */
     }
 
 
