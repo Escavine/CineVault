@@ -683,8 +683,7 @@ std::string generateOTP(std::string email, uint64_t counter)
     std::ostringstream oss;
     oss << std::setw(6) << std::setfill('0') << otp;
 
-    return oss.str();
-    
+    return oss.str(); // returns the OTP value generated
 
 }
 
@@ -723,6 +722,8 @@ void OTP(std::string email) // should the users email exist in the database, the
         time_t counter = time(0);
 
         std::string generatedOTP = generateOTP(email, counter); // function that will generate a random OTP number for the user
+        std::cout << "OTP: " << generatedOTP << "(testing measure)" << std::endl;
+
         sendOTPByEmail(email, generatedOTP);
 
         res = curl_easy_perform(curl);
