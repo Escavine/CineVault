@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <iomanip>
 #include <ctime>
+#include <cstdlib>
 #include <cryptopp/hmac.h>
 #include <cryptopp/sha.h> // encryption usage
 #include <cryptopp/base32.h>
@@ -626,52 +627,52 @@ void newPassword(std::string email)
 
 
 
-void verifyOTP(std::string generatedOTP, int otpChances, std::string email)
-{
-    int userResendOTP;
-    boolean otpConfo = FALSE;
-    boolean resendOTP = FALSE;
-    std::string inputtedOTP; 
+bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::string& email) {
+    bool otpConfirmed = false;
+    std::string inputtedOTP;
 
-    std::cout << "OTP requests remaining: " << otpChances << std::endl; // testing measure to ensure that the decrementation is working correctly, will be removed soon should it work     
 
-    std::cout << "Enter your OTP" << std::endl; // user will receive the OTP via their email and be asked to enter it to confirm their identity 
-    std::cin >> inputtedOTP;
-
-    do
+    // Loop for OTP verification with retries
+    while (!otpConfirmed && otpChances > 0) 
     {
+        std::cout << "OTP requests remaining: " << otpChances << std::endl;
 
-        if (inputtedOTP == generatedOTP)
+        std::cout << "Enter your OTP: ";
+        std::cin >> inputtedOTP;
+
+        if (inputtedOTP == generatedOTP) 
         {
-            std::cout << "OTP is valid, success." << std::endl; // should both values be the same, the users identity will be successfully confirmed
-            otpConfo = TRUE;
-            newPassword(email); // user will now be able to create a new password
-          
+            std::cout << "OTP is valid, success." << std::endl;
+            otpConfirmed = true;
+            newPassword(email);  // user can now create a new password
         }
-        else
+        else 
         {
-            std::cout << "OTP is invalid, please try again." << "\n" << std::endl;
-            verifyOTP(generatedOTP, otpChances - 1, email);
-
-            if (otpChances == 0)
-            {
-                std::cout << "Too many requests have been made, requests have been stopped to prevent spam" << std::endl;
-                std::cout << "Would you like to have a OTP sent to you again? (1 for yes and 2 for no)" << std::endl;
-                std::cin >> userResendOTP;
-
-                if (userResendOTP == 1)
-                {
-                    std::cout << "Not working yet :3" << std::endl;
-                    exit(0);
-                }
-                else if (userResendOTP == 2)
-                {
-                    menuAfterSignup(); // lead user to the menu
-                }
-
-            }
+            std::cout << "OTP is invalid, please try again." << std::endl;
+            --otpChances;
         }
-    } while (otpConfo == FALSE); 
+    }
+
+    // Handle too many attempts
+    if (!otpConfirmed && otpChances == 0) 
+    {
+        std::cout << "Too many requests have been made. Requests have been stopped to prevent spam." << std::endl;
+        std::cout << "Would you like to have an OTP sent to you again? (1 for yes and 2 for no): ";
+        int userResendOTP;
+        std::cin >> userResendOTP;
+
+        if (userResendOTP == 1) 
+        {
+            std::cout << "Not working yet :3" << std::endl;
+            exit(0);
+        }
+        else if (userResendOTP == 2) 
+        {
+            menuAfterSignup();  // lead the user to the menu
+        }
+    }
+
+    return otpConfirmed;
 }
 
 
@@ -739,7 +740,7 @@ void OTP(std::string email) // should the users email exist in the database, the
         // current time in seconds for TOTP encryption
         time_t counter = time(0);
 
-        std::string generatedOTP = generateOTP(email, counter); // function that will generate a random OTP number for the user
+        std::string generatedOTP = generateOTP(email, counter); // REFERENCE: THE GENERATED OTP IS STATIC, MAKE IT SO IT IS DYNAMIC BY ADJUSTING THE COUNTER
         std::cout << "OTP: " << generatedOTP << " (testing measure)" << std::endl;
 
         sendOTPByEmail(email, generatedOTP);
