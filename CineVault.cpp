@@ -695,9 +695,10 @@ std::string generateOTP(std::string email, uint64_t time, int timeStep)
     CryptoPP::HMAC<CryptoPP::SHA1> hmac((const byte*)email.data(), email.size());
     byte digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE];
     hmac.Update((const byte*)&counter, sizeof(counter));
+    hmac.Final(digest); // finalize the TOTP authentication code
 
     // truncating the HMAC value to 6 digits
-    int offset = digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE - 10] & 0x0F;
+    int offset = digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE - 1] & 0x0F;
     int32_t truncatedHash = (digest[offset] & 0x7F) << 24 | (digest[offset + 1] & 0xFF) << 16 | (digest[offset + 2] & 0xFF) << 8 | (digest[offset + 3] & 0xFF);
     
     int otp = truncatedHash % 1000000;
@@ -749,7 +750,7 @@ void OTP(std::string email) // should the users email exist in the database, the
 
 
         std::string generatedOTP = generateOTP(email, time, timeStep); // REFERENCE: THE GENERATED OTP IS STATIC, MAKE IT SO IT IS DYNAMIC BY ADJUSTING THE COUNTER
-        std::cout << "OTP: " << generatedOTP << " (testing measure)" << std::endl;
+        std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl;
 
         sendOTPByEmail(email, generatedOTP);
 
