@@ -671,7 +671,7 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
             menuAfterSignup();  // lead the user to the menu
         }
     }
-
+     
     return otpConfirmed;
 }
 
@@ -686,13 +686,13 @@ void sendOTPByEmail(std::string& email, std::string generatedOTP)
 }
 
 
-std::string generateOTP(std::string email, uint64_t counter)
+std::string generateOTP(std::string email, uint64_t time)
 {
 
     // generating TOTP
     CryptoPP::HMAC<CryptoPP::SHA1> hmac((const byte*)email.data(), email.size());
     byte digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE];
-    hmac.Update((const byte*)&counter, sizeof(counter));
+    hmac.Update((const byte*)&time, sizeof(time));
 
     // truncating the HMAC value to 6 digits
     int offset = digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE - 10] & 0x0F;
@@ -716,6 +716,7 @@ void OTP(std::string email) // should the users email exist in the database, the
     sqlite3_stmt* stmt;
     std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
+    int counter = 30; // for the TOTP encryption
 
     // API code to request for email and send a OTP to reset password
 
@@ -738,7 +739,11 @@ void OTP(std::string email) // should the users email exist in the database, the
 
 
         // current time in seconds for TOTP encryption
-        time_t counter = time(0);
+
+        auto counter = std::chrono::system_clock::now(); // retrieves the current time
+
+        std::time_t time = std::chrono::system_clock::to_time_t(counter);
+        std::cout << "Current time is: " << time << " (testing measure)" << std::endl;
 
         std::string generatedOTP = generateOTP(email, counter); // REFERENCE: THE GENERATED OTP IS STATIC, MAKE IT SO IT IS DYNAMIC BY ADJUSTING THE COUNTER
         std::cout << "OTP: " << generatedOTP << " (testing measure)" << std::endl;
