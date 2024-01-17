@@ -686,13 +686,15 @@ void sendOTPByEmail(std::string& email, std::string generatedOTP)
 }
 
 
-std::string generateOTP(std::string email, uint64_t time)
+std::string generateOTP(std::string email, uint64_t time, int timeStep)
 {
 
     // generating TOTP
+    uint64_t counter = time / timeStep;
+
     CryptoPP::HMAC<CryptoPP::SHA1> hmac((const byte*)email.data(), email.size());
     byte digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE];
-    hmac.Update((const byte*)&time, sizeof(time));
+    hmac.Update((const byte*)&counter, sizeof(counter));
 
     // truncating the HMAC value to 6 digits
     int offset = digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE - 10] & 0x0F;
@@ -716,7 +718,7 @@ void OTP(std::string email) // should the users email exist in the database, the
     sqlite3_stmt* stmt;
     std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
-    int counter = 30; // for the TOTP encryption
+    int timeStep = 30; // for the TOTP encryption
 
     // API code to request for email and send a OTP to reset password
 
@@ -745,7 +747,8 @@ void OTP(std::string email) // should the users email exist in the database, the
         std::time_t time = std::chrono::system_clock::to_time_t(counter);
         std::cout << "Current time is: " << time << " (testing measure)" << std::endl;
 
-        std::string generatedOTP = generateOTP(email, counter); // REFERENCE: THE GENERATED OTP IS STATIC, MAKE IT SO IT IS DYNAMIC BY ADJUSTING THE COUNTER
+
+        std::string generatedOTP = generateOTP(email, time, timeStep); // REFERENCE: THE GENERATED OTP IS STATIC, MAKE IT SO IT IS DYNAMIC BY ADJUSTING THE COUNTER
         std::cout << "OTP: " << generatedOTP << " (testing measure)" << std::endl;
 
         sendOTPByEmail(email, generatedOTP);
