@@ -1,7 +1,7 @@
 // CineVault: Movie Search and Collection App
 
 #include <iostream>
-#include <curl/curl.h> // API usage
+// #include <curl/curl.h> // API usage
 #include <sqlite3.h> // Database usage
 #include <chrono>
 #include <string>
@@ -29,8 +29,8 @@ void addMovies() // this function will allow for the insertion of new movies to 
 {
     sqlite3* db;
     sqlite3_stmt* stmt;
-    CURL* curl;
-    CURLcode res; // inserting CURL libraries
+    // CURL* curl;
+    // CURLcode res; // inserting CURL libraries
     int rc;
 
     rc = sqlite3_open("users.db", &db);
@@ -45,43 +45,43 @@ void addMovies() // this function will allow for the insertion of new movies to 
     }
 
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+    // curl_global_init(CURL_GLOBAL_DEFAULT);
 
-    curl = curl_easy_init();
+    //curl = curl_easy_init();
 
-    if (curl)
+    // if (curl)
+    // {
+    std::string data;
+    std::string movieTitle;
+
+    std::cout << "Enter the movie you'd like to search for" << std::endl;
+    std::cin >> movieTitle;
+
+    std::string apiKey = "1d9b5025";  // future reference: since you are uploading on a public repo, reference this from a file rather than expose the ID
+    std::string apiUrl = "http://www.omdbapi.com/?apikey=" + apiKey + "&t=" + movieTitle;
+    std::cout << apiUrl << std::endl; // testing measure: will be removed soon
+
+    // curl_easy_setopt(curl, CURLOPT_URL, apiUrl.c_str());
+    // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    // curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+
+    // res = curl_easy_perform(curl);
+
+    // if (res != CURLE_OK)
     {
-        std::string data;
-        std::string movieTitle;
-
-        std::cout << "Enter the movie you'd like to search for" << std::endl;
-        std::cin >> movieTitle;
-
-        std::string apiKey = "1d9b5025";  // future reference: since you are uploading on a public repo, reference this from a file rather than expose the ID
-        std::string apiUrl = "http://www.omdbapi.com/?apikey=" + apiKey + "&t=" + movieTitle;
-        std::cout << apiUrl << std::endl; // testing measure: will be removed soon
-
-        curl_easy_setopt(curl, CURLOPT_URL, apiUrl.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
-
-        res = curl_easy_perform(curl);
-
-        if (res != CURLE_OK)
-        {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        // fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
             
-        }
-        else
-        {
-            std::cout << data << std::endl;
-        }
-        curl_easy_cleanup(curl);
-
     }
+    // else
+    {
+        // std::cout << data << std::endl;
+    }
+        // curl_easy_cleanup(curl);
 
-    curl_global_cleanup();
 }
+
+// curl_global_cleanup();
+// }
 
 
 
@@ -678,13 +678,29 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
 
 
 
-void sendOTPByEmail(std::string& email, std::string generatedOTP)
+void sendOTPByEmail(const std::string& smtpServer, int smtpPort, std::string recipient, std::string generatedOTP)
 {
-    // Construct email content
-    std::string emailContent = "{\"From\": \"thelollipopcreamytber@gmail.com\", \"To\": \"" + email +
-        "\", \"Subject\": \"OTP Confirmation\", \"HtmlBody\": \"Your OTP: " +
-        (generatedOTP) + "\"}";
+    httplib::Client cli(smtpServer.c_str(), smtpPort);
+    std::string emailBody = "OTP confirmation: " + generatedOTP;
+
+    // POST request
+    auto res = cli.Post("/sendmail", {
+    {"to", recipient},
+    {"from", smtpServer},
+    {"OTP Verification"},
+    {"text", std::string(emailBody)}
+        });
+
+    if (res && res->status == 200)
+    {
+        std::cout << "OTP email has been sent. If you cannot find it, please check your spam inbox." << std::endl;
+    }
+    else
+    {
+        std::cerr << "OTP has failed to send. Error: " << (res ? res->status : -1) << std::endl;
+    }
 }
+
 
 
 std::string generateOTP(std::string email, uint64_t time, int timeStep)
@@ -716,27 +732,22 @@ void OTP(std::string email) // should the users email exist in the database, the
 {
     sqlite3* db; // SQL libraries
     sqlite3_stmt* stmt;
+    std::string smtpServer = "thelollipopcreamytber@gmail.com"; // testing measure will change to domain email in the future
+    int smtpPort = 587; // SMTP protocol port number for secure transmission
     std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
     int timeStep = 30; // for the TOTP encryption
 
-    
 
-
-
-
-    // current time in seconds for TOTP encryption
-
-    auto counter = std::chrono::system_clock::now(); // retrieves the current time
-
+    auto counter = std::chrono::system_clock::now(); // current time in seconds for TOTP encryption
     std::time_t time = std::chrono::system_clock::to_time_t(counter);
-    std::cout << "Current time is: " << time << " (testing measure)" << std::endl;
+    std::cout << "Current time is: " << time << " (testing measure)" << std::endl; // remove all testing measures once done
 
 
     std::string generatedOTP = generateOTP(email, time, timeStep); // REFERENCE: THE GENERATED OTP IS STATIC, MAKE IT SO IT IS DYNAMIC BY ADJUSTING THE COUNTER
     std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl;
 
-    sendOTPByEmail(email, generatedOTP);
+    sendOTPByEmail(smtpServer, smtpPort, email, generatedOTP); // function call to send OTP vai email
 
 }
 
