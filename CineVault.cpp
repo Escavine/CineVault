@@ -13,6 +13,7 @@
 #include <cryptopp/sha.h> // encryption usage
 #include <cryptopp/base32.h>
 #include <cryptopp/filters.h>
+#include <httplib.h> // for sending authentication email
 
 
 
@@ -648,7 +649,7 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
         }
         else 
         {
-            std::cout << "OTP is invalid, please try again." << std::endl;
+            std::cout << "OTP is invalid, please try again." << "\n" << std::endl;
             --otpChances;
         }
     }
@@ -713,68 +714,33 @@ std::string generateOTP(std::string email, uint64_t time, int timeStep)
 
 void OTP(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
 {
-    CURL* curl;
-    CURLcode res; // CURL libraries
     sqlite3* db; // SQL libraries
     sqlite3_stmt* stmt;
     std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
     int timeStep = 30; // for the TOTP encryption
 
-    // API code to request for email and send a OTP to reset password
-
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-
-    curl = curl_easy_init();
-
-    if (curl)
-    {
-        std::string data;
-
-        // headers and authentication
-        curl_easy_setopt(curl, CURLOPT_URL, email.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
-
-
-        // headers for HTTP request 
+    
 
 
 
-        // current time in seconds for TOTP encryption
 
-        auto counter = std::chrono::system_clock::now(); // retrieves the current time
+    // current time in seconds for TOTP encryption
 
-        std::time_t time = std::chrono::system_clock::to_time_t(counter);
-        std::cout << "Current time is: " << time << " (testing measure)" << std::endl;
+    auto counter = std::chrono::system_clock::now(); // retrieves the current time
 
-
-        std::string generatedOTP = generateOTP(email, time, timeStep); // REFERENCE: THE GENERATED OTP IS STATIC, MAKE IT SO IT IS DYNAMIC BY ADJUSTING THE COUNTER
-        std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl;
-
-        sendOTPByEmail(email, generatedOTP);
-
-        res = curl_easy_perform(curl);
+    std::time_t time = std::chrono::system_clock::to_time_t(counter);
+    std::cout << "Current time is: " << time << " (testing measure)" << std::endl;
 
 
-        if (res != CURLE_OK)
-        {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+    std::string generatedOTP = generateOTP(email, time, timeStep); // REFERENCE: THE GENERATED OTP IS STATIC, MAKE IT SO IT IS DYNAMIC BY ADJUSTING THE COUNTER
+    std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl;
 
-        }
-        else
-        {
-            std::cout << "OTP sent successfully!" << std::endl;
-            verifyOTP(generatedOTP, otpChances, email); // the inputted OTP will be compared against the generated OTP to ensure that it is correct
+    sendOTPByEmail(email, generatedOTP);
 
-        }
-
-    curl_easy_cleanup(curl);
-
-    }
-
-    curl_global_cleanup();
 }
+
+
 
 boolean isValidEmailAddress(std::string email)
 {
@@ -823,6 +789,8 @@ void checkForUserEmail(int userChoice, int userAttempts)
     if (isValidEmailAddress(email))
     {
         std::cout << "User email format is valid." << std::endl;
+
+        // Future reference: create a function to ensure that the users email actually exists in the database
         OTP(email); // direct the user to the forgot password function
     }
     else
