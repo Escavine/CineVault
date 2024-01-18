@@ -1,7 +1,10 @@
 // CineVault: Movie Search and Collection App
 
 #include <iostream>
-// #include <curl/curl.h> // API usage
+#include <curl/curl.h> // API usage
+#include <Poco/Poco.h> // SMTP purposes
+#include <Poco/Net/MailMessage.h>
+#include <Poco/Net/SMTPClientSession.h> 
 #include <sqlite3.h> // Database usage
 #include <chrono>
 #include <string>
@@ -13,7 +16,16 @@
 #include <cryptopp/sha.h> // encryption usage
 #include <cryptopp/base32.h>
 #include <cryptopp/filters.h>
-#include <httplib.h> // for sending authentication email
+#include <google/cloud/access_token.h> 
+#include <google/cloud/storage/oauth2/anonymous_credentials.h>
+#include <google/cloud/storage/oauth2/authorized_user_credentials.h>
+#include <google/cloud/storage/oauth2/compute_engine_credentials.h> // these include files will be moved soon
+#include <google/cloud/storage/oauth2/credential_constants.h>
+#include <google/cloud/storage/oauth2/credentials.h>
+#include <google/cloud/storage/oauth2/google_application_default_credentials_file.h>
+#include <google/cloud/storage/oauth2/google_credentials.h>
+#include <google/cloud/storage/oauth2/refreshing_credentials_wrapper.h>
+#include <google/cloud/storage/oauth2/service_account_credentials.h>
 
 
 
@@ -29,8 +41,8 @@ void addMovies() // this function will allow for the insertion of new movies to 
 {
     sqlite3* db;
     sqlite3_stmt* stmt;
-    // CURL* curl;
-    // CURLcode res; // inserting CURL libraries
+    CURL* curl;
+    CURLcode res; // inserting CURL libraries
     int rc;
 
     rc = sqlite3_open("users.db", &db);
@@ -45,12 +57,12 @@ void addMovies() // this function will allow for the insertion of new movies to 
     }
 
 
-    // curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl_global_init(CURL_GLOBAL_DEFAULT);
 
-    //curl = curl_easy_init();
+    curl = curl_easy_init();
 
-    // if (curl)
-    // {
+    if (curl)
+    {
     std::string data;
     std::string movieTitle;
 
@@ -61,27 +73,27 @@ void addMovies() // this function will allow for the insertion of new movies to 
     std::string apiUrl = "http://www.omdbapi.com/?apikey=" + apiKey + "&t=" + movieTitle;
     std::cout << apiUrl << std::endl; // testing measure: will be removed soon
 
-    // curl_easy_setopt(curl, CURLOPT_URL, apiUrl.c_str());
-    // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    // curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+    curl_easy_setopt(curl, CURLOPT_URL, apiUrl.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 
-    // res = curl_easy_perform(curl);
+    res = curl_easy_perform(curl);
 
-    // if (res != CURLE_OK)
+    if (res != CURLE_OK)
     {
-        // fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-            
-    }
-    // else
-    {
-        // std::cout << data << std::endl;
-    }
-        // curl_easy_cleanup(curl);
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 
+    }
+    else
+    {
+        std::cout << data << std::endl;
+    }
+    curl_easy_cleanup(curl);
+
+    }
+
+    curl_global_cleanup();
 }
-
-// curl_global_cleanup();
-// }
 
 
 
@@ -356,8 +368,8 @@ void createMovieWatchlistTable(int UID, std::string watchlistTableName) // once 
         "watchedStatus TEXT, "
         "userID INTEGER, "
         "FOREIGN KEY (userID) REFERENCES users(userID)"
-        ")";   
-    
+        ")";
+
     const char* createWatchList = query.c_str(); // characterized the query
 
     int result = sqlite3_exec(db, createWatchList, nullptr, nullptr, nullptr);
@@ -387,7 +399,7 @@ bool doesUsernameExist(std::string un) { // this function will check if the user
     if (rc != SQLITE_OK) {
         std::cout << "Error opening SQL database" << "\n"
             << "Error code: " << sqlite3_errcode(db) << "\n"
-            << "Error message: " << sqlite3_errmsg(db) << "\n";       
+            << "Error message: " << sqlite3_errmsg(db) << "\n";
     }
 
     const char* userCheck = "SELECT username FROM users WHERE username = ?"; // query to specically look at usernames
@@ -487,7 +499,7 @@ void signUp(int userChoice)
     {
         std::cout << "Email format is valid" << std::endl;
     }
-    else 
+    else
     {
         std::cerr << "Invalid email format" << std::endl;
         signUp(userChoice); // recurse and allow user to reinput their details
@@ -524,7 +536,7 @@ void signUp(int userChoice)
 
     int result = sqlite3_step(stmt);
 
-    if (result == SQLITE_DONE) 
+    if (result == SQLITE_DONE)
     {
         std::cout << "Sign up success!" << std::endl;
         int UID = sqlite3_last_insert_rowid(db); // attain the last row ID to get a userID
@@ -532,7 +544,7 @@ void signUp(int userChoice)
         createMovieWatchlistTable(UID, watchlistTableName); // create a watchlist table for the user
         menuAfterSignup(); // user is redirected back to the menu
     }
-    else 
+    else
     {
         std::cerr << "Database integration has failed!" << "\n"
             << "Error code: " << sqlite3_errcode(db) << "\n"
@@ -634,20 +646,20 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
 
 
     // Loop for OTP verification with retries
-    while (!otpConfirmed && otpChances > 0) 
+    while (!otpConfirmed && otpChances > 0)
     {
         std::cout << "OTP requests remaining: " << otpChances << std::endl;
 
         std::cout << "Enter your OTP: ";
         std::cin >> inputtedOTP;
 
-        if (inputtedOTP == generatedOTP) 
+        if (inputtedOTP == generatedOTP)
         {
             std::cout << "OTP is valid, success." << std::endl;
             otpConfirmed = true;
             newPassword(email);  // user can now create a new password
         }
-        else 
+        else
         {
             std::cout << "OTP is invalid, please try again." << "\n" << std::endl;
             --otpChances;
@@ -655,24 +667,24 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
     }
 
     // Handle too many attempts
-    if (!otpConfirmed && otpChances == 0) 
+    if (!otpConfirmed && otpChances == 0)
     {
         std::cout << "Too many requests have been made. Requests have been stopped to prevent spam." << std::endl;
         std::cout << "Would you like to have an OTP sent to you again? (1 for yes and 2 for no): ";
         int userResendOTP;
         std::cin >> userResendOTP;
 
-        if (userResendOTP == 1) 
+        if (userResendOTP == 1)
         {
             std::cout << "Not working yet :3" << std::endl;
             exit(0);
         }
-        else if (userResendOTP == 2) 
+        else if (userResendOTP == 2)
         {
             menuAfterSignup();  // lead the user to the menu
         }
     }
-     
+
     return otpConfirmed;
 }
 
@@ -680,25 +692,18 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
 
 void sendOTPByEmail(const std::string& smtpServer, int smtpPort, std::string recipient, std::string generatedOTP)
 {
-    httplib::Client cli(smtpServer.c_str(), smtpPort);
-    std::string emailBody = "OTP confirmation: " + generatedOTP;
+    Poco::Net::MailMessage msg; // initiating the poco library
+    msg.addRecipient(Poco::Net::MailRecipient(Poco::Net::MailRecipient::PRIMARY_RECIPIENT,
+        recipient));
+    msg.setSender(smtpServer);
+    msg.setSubject("OTP Confirmation");
+    msg.setContent("Your OTP: " + generatedOTP);
 
-    // POST request
-    auto res = cli.Post("/sendmail", {
-    {"to", recipient},
-    {"from", smtpServer},
-    {"OTP Verification"},
-    {"text", std::string(emailBody)}
-        });
+    Poco::Net::SMTPClientSession smtp(recipient);
+    smtp.login();
+    smtp.sendMessage(msg);
+    smtp.close(); // finish utilisation of SMTP
 
-    if (res && res->status == 200)
-    {
-        std::cout << "OTP email has been sent. If you cannot find it, please check your spam inbox." << std::endl;
-    }
-    else
-    {
-        std::cerr << "OTP has failed to send. Error: " << (res ? res->status : -1) << std::endl;
-    }
 }
 
 
@@ -717,7 +722,7 @@ std::string generateOTP(std::string email, uint64_t time, int timeStep)
     // truncating the HMAC value to 6 digits
     int offset = digest[CryptoPP::HMAC<CryptoPP::SHA1>::DIGESTSIZE - 1] & 0x0F;
     int32_t truncatedHash = (digest[offset] & 0x7F) << 24 | (digest[offset + 1] & 0xFF) << 16 | (digest[offset + 2] & 0xFF) << 8 | (digest[offset + 3] & 0xFF);
-    
+
     int otp = truncatedHash % 1000000;
     std::ostringstream oss;
     oss << std::setw(6) << std::setfill('0') << otp;
@@ -895,7 +900,6 @@ int main() {
 
     return 0;
 }
-
 
 
 
