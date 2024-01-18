@@ -8,4 +8,5 @@ This repository is ongoing development, and will be including more libraries and
 - sqlite3
 - cURL API
 - crypto++
-- httplib
+- mailio
+- poco
