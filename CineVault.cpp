@@ -324,7 +324,7 @@ std::string generateWatchlistTable(int UID)
 void createMovieWatchlistTable(int UID, std::string watchlistTableName) // once the user has successfully signed up, the algorithm will run this section of code enabling the creation of the unique movie watchlist table per user
 {
     sqlite3* db;
-    sqlite3_stmt* stmt;
+    sqlite3_stmt* stmt = nullptr;
     int rc;
 
     rc = sqlite3_open("users.db", &db);
@@ -712,17 +712,15 @@ std::string generateOTP(std::string email, uint64_t time, int timeStep)
 
 
 
-void OTP(std::string email) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
+void OTP(std::string clientEmail) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
 {
-    sqlite3* db; // SQL libraries
-    sqlite3_stmt* stmt;
     std::vector<std::string> smtpServer; // will be used to store the authentication details
     std::vector<std::string> smtpPass; // will be used to store the authentication details
     int smtpPort = 587; // SMTP protocol port number for secure transmission
     std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
     int timeStep = 30; // for the TOTP encryption
-    std::vector<std::string> testingPrintOrder{ "Email: ", "Password: " };
+    std::vector<std::string> testingPrintOrder{ "Email: ", "Password: " }; // success: this will need to be removed
 
      
     // reading from a file (security purposes)
@@ -740,7 +738,7 @@ void OTP(std::string email) // should the users email exist in the database, the
         }
 
         // output for testing
-        for (std::size_t i = 0; i < readLines.size(); ++i)
+        for (std::size_t i = 0; i < readLines.size(); ++i) // this whole loop will require removal as testing has been a success
         {
             std::cout << testingPrintOrder[i] << readLines[i] << std::endl;
         }
@@ -756,19 +754,19 @@ void OTP(std::string email) // should the users email exist in the database, the
     auto counter = std::chrono::system_clock::now(); // current time in seconds for TOTP encryption
     std::time_t time = std::chrono::system_clock::to_time_t(counter);
 
-    std::string generatedOTP = generateOTP(email, time, timeStep); // dynamic OTP will be generated
+    std::string generatedOTP = generateOTP(clientEmail, time, timeStep); // dynamic OTP will be generated
     std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl; // will be removed once OTP can be successfully sent to the recipient
 
-    // sendOTPByEmail(smtpServer, smtpPort, email, generatedOTP); // function call to send OTP vai email
+    sendOTPByEmail(smtpServer, smtpPort, clientEmail, generatedOTP); // function call to send OTP vai email
 
 }
 
 
 
-boolean isValidEmailAddress(std::string email)
+boolean isValidEmailAddress(std::string clientEmail)
 {
-    size_t atPosition = email.find("@"); // these characters will be searched for within the email variable to ensure that it is indeed in correct format
-    size_t dotPosition = email.find(".");
+    size_t atPosition = clientEmail.find("@"); // these characters will be searched for within the email variable to ensure that it is indeed in correct format
+    size_t dotPosition = clientEmail.find(".");
 
     if (atPosition != std::string::npos && dotPosition != std::string::npos && atPosition < dotPosition)
     {
@@ -786,7 +784,7 @@ void checkForUserEmail(int userChoice, int userAttempts)
     sqlite3* db; // sql libraries
     sqlite3_stmt* stmt;
     int rc; // return code
-    std::string email; // email
+    std::string clientEmail; // email
 
 
     // firstly, we will check if the users email exists on the system
@@ -806,15 +804,15 @@ void checkForUserEmail(int userChoice, int userAttempts)
 
     std::cout << "Forgot password" << "\n" << std::endl;
     std::cout << "Enter your email address" << std::endl;
-    std::cin >> email;
+    std::cin >> clientEmail;
 
 
-    if (isValidEmailAddress(email))
+    if (isValidEmailAddress(clientEmail))
     {
         std::cout << "User email format is valid." << std::endl;
 
         // Future reference: create a function to ensure that the users email actually exists in the database
-        OTP(email); // direct the user to the forgot password function
+        OTP(clientEmail); // direct the user to the forgot password function
     }
     else
     {
