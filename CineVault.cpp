@@ -671,17 +671,17 @@ void sendOTPByEmail(const std::string& smtpServer, int smtpPort, std::string rec
     // reading from file (for security purposes)
 
 
-    Poco::Net::MailMessage msg; // initiating the poco library
-    msg.addRecipient(Poco::Net::MailRecipient(Poco::Net::MailRecipient::PRIMARY_RECIPIENT,
-        recipient));
-    msg.setSender(smtpServer);
-    msg.setSubject("OTP Confirmation");
-    msg.setContent("Your OTP: " + generatedOTP);
+    // Poco::Net::MailMessage msg; // initiating the poco library
+    // msg.addRecipient(Poco::Net::MailRecipient(Poco::Net::MailRecipient::PRIMARY_RECIPIENT,
+        // recipient));
+    // msg.setSender(smtpServer);
+    // msg.setSubject("OTP Confirmation");
+    // msg.setContent("Your OTP: " + generatedOTP);
 
-    Poco::Net::SMTPClientSession smtp(recipient);
-    smtp.login(Poco::Net::SMTPClientSession::AUTH_LOGIN, );
-    smtp.sendMessage(msg);
-    smtp.close(); // finish utilisation of SMTP
+    // Poco::Net::SMTPClientSession smtp(recipient);
+    // smtp.login();
+    // smtp.sendMessage(msg);
+    // smtp.close(); // finish utilisation of SMTP
 
 }
 
@@ -728,20 +728,46 @@ void OTP(std::string email) // should the users email exist in the database, the
 
     std::ifstream MyReadFile("authentication.txt");
 
-    while (std::getline(MyReadFile, smtpServer))
+    if (MyReadFile.is_open())
     {
-        std::cin >> smtpServer;
+        // vector declared to store lines
+        std::vector<std::string> lines;
 
+        while (std::getline(MyReadFile, readLines))
+        {
+            lines.push_back(readLines);
+
+            std::size_t spacePos = readLines.find(' ');
+            if (spacePos != std::string::npos)
+            {
+                smtpServer = readLines.substr(0, spacePos);
+                smtpPass = readLines.substr(spacePos + 1);
+            }
+            
+        }
+
+        // output for testing
+        for (const auto& smtpServer : lines)
+        {
+            std::cout << "SMTP Server: " << "\n" << smtpServer << std::endl;
+        }
+
+        MyReadFile.close(); // close the file 
     }
+    else
+    {
+        std::cerr << "Unable to open file." << std::endl;
+    }
+  
 
-    MyReadFile.close(); // close the file 
+
+
 
     auto counter = std::chrono::system_clock::now(); // current time in seconds for TOTP encryption
     std::time_t time = std::chrono::system_clock::to_time_t(counter);
-    std::cout << "Current time is: " << time << " (testing measure)" << std::endl; // remove all testing measures once done
 
 
-    std::string generatedOTP = generateOTP(email, time, timeStep); // REFERENCE: THE GENERATED OTP IS STATIC, MAKE IT SO IT IS DYNAMIC BY ADJUSTING THE COUNTER
+    std::string generatedOTP = generateOTP(email, time, timeStep); // dynamic OTP will be generated
     std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl;
 
     sendOTPByEmail(smtpServer, smtpPort, email, generatedOTP); // function call to send OTP vai email
