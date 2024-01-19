@@ -741,6 +741,17 @@ void OTP(std::string clientEmail) // should the users email exist in the databas
         {
             std::cout << testingPrintOrder[i] << readLines[i] << std::endl;
 
+            if (i == 0)
+            {
+                smtpServer = readLines[i];
+                std::cout << "Stored email: " << smtpServer << std::endl; // testing measure
+
+            }
+            else if (i == 1)
+            {
+                smtpPass = readLines[i];
+                std::cout << "Stored password: " << smtpPass << std::endl; // testing measure
+            }
         }
 
 
