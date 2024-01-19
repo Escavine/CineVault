@@ -716,40 +716,33 @@ void OTP(std::string email) // should the users email exist in the database, the
 {
     sqlite3* db; // SQL libraries
     sqlite3_stmt* stmt;
-    std::string readLines; // will be used to read each line of the file
-    std::string smtpServer; // will be used to store the authentication details
-    std::string smtpPass; // will be used to store teh authentication details
+    std::vector<std::string> smtpServer; // will be used to store the authentication details
+    std::vector<std::string> smtpPass; // will be used to store the authentication details
     int smtpPort = 587; // SMTP protocol port number for secure transmission
     std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
     int timeStep = 30; // for the TOTP encryption
+    std::vector<std::string> testingPrintOrder{ "Email: ", "Password: " };
 
+     
     // reading from a file (security purposes)
 
     std::ifstream MyReadFile("authentication.txt");
 
     if (MyReadFile.is_open())
     {
-        // vector declared to store lines
-        std::vector<std::string> lines;
+        std::vector<std::string> readLines;
+        std::string line; // will read the file content lines
 
-        while (std::getline(MyReadFile, readLines))
+        while (std::getline(MyReadFile, line))
         {
-            lines.push_back(readLines);
-
-            std::size_t spacePos = readLines.find(' ');
-            if (spacePos != std::string::npos)
-            {
-                smtpServer = readLines.substr(0, spacePos);
-                smtpPass = readLines.substr(spacePos + 1);
-            }
-            
+            readLines.push_back(line);   
         }
 
         // output for testing
-        for (const auto& smtpServer : lines)
+        for (std::size_t i = 0; i < readLines.size(); ++i)
         {
-            std::cout << "SMTP Server: " << "\n" << smtpServer << std::endl;
+            std::cout << testingPrintOrder[i] << readLines[i] << std::endl;
         }
 
         MyReadFile.close(); // close the file 
@@ -760,17 +753,13 @@ void OTP(std::string email) // should the users email exist in the database, the
     }
   
 
-
-
-
     auto counter = std::chrono::system_clock::now(); // current time in seconds for TOTP encryption
     std::time_t time = std::chrono::system_clock::to_time_t(counter);
 
-
     std::string generatedOTP = generateOTP(email, time, timeStep); // dynamic OTP will be generated
-    std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl;
+    std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl; // will be removed once OTP can be successfully sent to the recipient
 
-    sendOTPByEmail(smtpServer, smtpPort, email, generatedOTP); // function call to send OTP vai email
+    // sendOTPByEmail(smtpServer, smtpPort, email, generatedOTP); // function call to send OTP vai email
 
 }
 
