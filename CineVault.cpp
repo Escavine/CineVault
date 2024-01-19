@@ -666,16 +666,19 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
 
 
 
-void sendOTPByEmail(std::string& smtpServer, int smtpPort,  std::string& smtpPass,  std::string& clientEmail, const std::string& generatedOTP)
+void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& clientEmail, const std::string& generatedOTP)
 {
-    Poco::Net::MailMessage msg;
-    msg.addRecipient(Poco::Net::MailRecipient(Poco::Net::MailRecipient::PRIMARY_RECIPIENT, clientEmail));
-    msg.setSubject("OTP Confirmation");
-    msg.setContent("Dear User,\n\nYour OTP for confirmation is: " + generatedOTP + "\n\nBest regards,\nCineVault");
-
     try {
-        Poco::Net::SMTPClientSession smtp("74.125.143.108", smtpPort);
-        smtp.login(Poco::Net::SMTPClientSession::AUTH_LOGIN, smtpServer, smtpPass); // Use PLAIN authentication
+        Poco::Net::MailMessage msg;
+        int smtpPort = 587; // SMTP protocol port number for secure transmission
+        std::string smtpServer = "smtp.gmail.com"; // SMTP for Google
+        msg.addRecipient(Poco::Net::MailRecipient(Poco::Net::MailRecipient::PRIMARY_RECIPIENT, clientEmail));
+        msg.setSubject("OTP Confirmation");
+        msg.setContent("Dear User,\n\nYour OTP for confirmation is: " + generatedOTP + "\n\nBest regards,\nCineVault");
+        
+        Poco::Net::SMTPClientSession smtp(smtpServer, smtpPort);
+        smtp.login(Poco::Net::SMTPClientSession::AUTH_LOGIN, smtpEmail, smtpPass); // Use PLAIN authentication
+
         smtp.sendMessage(msg);
         smtp.close();
     }
@@ -689,7 +692,6 @@ void sendOTPByEmail(std::string& smtpServer, int smtpPort,  std::string& smtpPas
 
 std::string generateOTP(std::string email, uint64_t time, int timeStep)
 {
-
     // generating TOTP
     uint64_t counter = time / timeStep;
 
@@ -714,9 +716,8 @@ std::string generateOTP(std::string email, uint64_t time, int timeStep)
 
 void OTP(std::string clientEmail) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
 {
-    std::string smtpServer; // will be used to store the authentication details
+    std::string smtpEmail; // will be used to store the authentication details
     std::string smtpPass; // will be used to store the authentication details
-    int smtpPort = 587; // SMTP protocol port number for secure transmission
     std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
     int timeStep = 30; // for the TOTP encryption
@@ -741,8 +742,8 @@ void OTP(std::string clientEmail) // should the users email exist in the databas
         {
             if (i == 0)
             {
-                smtpServer = readLines[i];
-                std::cout << "Stored email: " << smtpServer << std::endl; // testing measure
+                smtpEmail = readLines[i];
+                std::cout << "Stored email: " << smtpEmail << std::endl; // testing measure
 
             }
             else if (i == 1)
@@ -751,8 +752,6 @@ void OTP(std::string clientEmail) // should the users email exist in the databas
                 std::cout << "Stored password: " << smtpPass << std::endl; // testing measure
             }
         }
-
-
 
         MyReadFile.close(); // close the file 
     }
@@ -768,7 +767,7 @@ void OTP(std::string clientEmail) // should the users email exist in the databas
     std::string generatedOTP = generateOTP(clientEmail, time, timeStep); // dynamic OTP will be generated
     std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl; // will be removed once OTP can be successfully sent to the recipient
 
-    sendOTPByEmail(smtpServer, smtpPort, smtpPass, clientEmail, generatedOTP); // function call to send OTP vai email
+    sendOTPByEmail(smtpEmail, smtpPass, clientEmail, generatedOTP); // function call to send OTP vai email
 
 }
 
