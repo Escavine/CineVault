@@ -8,6 +8,7 @@
 #include <sqlite3.h> // Database usage
 #include <chrono>
 #include <string>
+#include <fstream>
 #include <stdio.h>
 #include <iomanip>
 #include <ctime>
@@ -16,16 +17,8 @@
 #include <cryptopp/sha.h> // encryption usage
 #include <cryptopp/base32.h>
 #include <cryptopp/filters.h>
-#include <google/cloud/access_token.h> 
-#include <google/cloud/storage/oauth2/anonymous_credentials.h>
-#include <google/cloud/storage/oauth2/authorized_user_credentials.h>
-#include <google/cloud/storage/oauth2/compute_engine_credentials.h> // these include files will be moved soon
-#include <google/cloud/storage/oauth2/credential_constants.h>
-#include <google/cloud/storage/oauth2/credentials.h>
-#include <google/cloud/storage/oauth2/google_application_default_credentials_file.h>
-#include <google/cloud/storage/oauth2/google_credentials.h>
-#include <google/cloud/storage/oauth2/refreshing_credentials_wrapper.h>
-#include <google/cloud/storage/oauth2/service_account_credentials.h>
+#include <cpprest/oauth2.h> // implementation of oauth2 for authentication purposes
+#include <cpprest/http_client.h>
 
 
 
@@ -51,11 +44,6 @@ void addMovies() // this function will allow for the insertion of new movies to 
     {
         std::cout << "Error opening database \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
     }
-    else
-    {
-        std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
-    }
-
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
@@ -117,10 +105,7 @@ bool userWatchlist(int UID)
     {
         std::cout << "Error opening database \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
     }
-    else
-    {
-        std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
-    }
+
 
     std::string query = "SELECT movieName, movieGenre, watchedStatus FROM userWatchlist_" + std::to_string(UID);
     const char* cQuery = query.c_str(); // concatenated query
@@ -130,10 +115,8 @@ bool userWatchlist(int UID)
     {
         std::cout << "Error preparing query \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
     }
-    else
-    {
-        std::cout << "Statement has been prepared!\n" << std::endl; // testing measure: will be removed soon
-    }
+
+
 
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
@@ -159,10 +142,7 @@ void loginSession(int UID, std::string individualName, std::string individualSur
     {
         std::cout << "Error opening database \n" << "Error code: \n" << sqlite3_errcode(db) << "Error message: \n" << sqlite3_errmsg(db) << std::endl;
     }
-    else
-    {
-        std::cout << "Database has successfully been opened!\n" << std::endl; // testing measure: will be removed soon
-    }
+
 
     std::cout << "Welcome " << individualName << " " << individualSurname << std::endl;
     std::cout << "CineVault: Movie Search and Collection App" << std::endl;
@@ -354,10 +334,6 @@ void createMovieWatchlistTable(int UID, std::string watchlistTableName) // once 
         std::cout << "Error opening SQL database" << "\n"
             << "Error code: " << sqlite3_errcode(db) << "\n"
             << "Error message: " << sqlite3_errmsg(db) << "\n";
-    }
-    else
-    {
-        std::cout << "Database has opened successfully! \n" << std::endl; // testing measure: will be removed soon
     }
 
 
@@ -692,6 +668,9 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
 
 void sendOTPByEmail(const std::string& smtpServer, int smtpPort, std::string recipient, std::string generatedOTP)
 {
+    // reading from file (for security purposes)
+
+
     Poco::Net::MailMessage msg; // initiating the poco library
     msg.addRecipient(Poco::Net::MailRecipient(Poco::Net::MailRecipient::PRIMARY_RECIPIENT,
         recipient));
@@ -700,7 +679,7 @@ void sendOTPByEmail(const std::string& smtpServer, int smtpPort, std::string rec
     msg.setContent("Your OTP: " + generatedOTP);
 
     Poco::Net::SMTPClientSession smtp(recipient);
-    smtp.login();
+    smtp.login(Poco::Net::SMTPClientSession::AUTH_LOGIN, );
     smtp.sendMessage(msg);
     smtp.close(); // finish utilisation of SMTP
 
@@ -737,12 +716,25 @@ void OTP(std::string email) // should the users email exist in the database, the
 {
     sqlite3* db; // SQL libraries
     sqlite3_stmt* stmt;
-    std::string smtpServer = "thelollipopcreamytber@gmail.com"; // testing measure will change to domain email in the future
+    std::string readLines; // will be used to read each line of the file
+    std::string smtpServer; // will be used to store the authentication details
+    std::string smtpPass; // will be used to store teh authentication details
     int smtpPort = 587; // SMTP protocol port number for secure transmission
     std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
     int timeStep = 30; // for the TOTP encryption
 
+    // reading from a file (security purposes)
+
+    std::ifstream MyReadFile("authentication.txt");
+
+    while (std::getline(MyReadFile, smtpServer))
+    {
+        std::cin >> smtpServer;
+
+    }
+
+    MyReadFile.close(); // close the file 
 
     auto counter = std::chrono::system_clock::now(); // current time in seconds for TOTP encryption
     std::time_t time = std::chrono::system_clock::to_time_t(counter);
