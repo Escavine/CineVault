@@ -714,17 +714,16 @@ std::string generateOTP(std::string email, uint64_t time, int timeStep)
 
 void OTP(std::string clientEmail) // should the users email exist in the database, they'll be redirected to this function to successfully reset their password
 {
-    std::vector<std::string> smtpServer; // will be used to store the authentication details
-    std::vector<std::string> smtpPass; // will be used to store the authentication details
+    std::string smtpServer; // will be used to store the authentication details
+    std::string smtpPass; // will be used to store the authentication details
     int smtpPort = 587; // SMTP protocol port number for secure transmission
     std::string inputtedOTP; // users input when asked for OTP
     int otpChances = 3; // users will get 3 chances to input the correct OTP to prevent HTTP request spam
     int timeStep = 30; // for the TOTP encryption
-    std::vector<std::string> testingPrintOrder{ "Email: ", "Password: " }; // success: this will need to be removed
+    std::vector<std::string> testingPrintOrder{ "Email: ", "Password: " }; 
 
      
     // reading from a file (security purposes)
-
     std::ifstream MyReadFile("authentication.txt");
 
     if (MyReadFile.is_open())
@@ -737,11 +736,14 @@ void OTP(std::string clientEmail) // should the users email exist in the databas
             readLines.push_back(line);   
         }
 
-        // output for testing
-        for (std::size_t i = 0; i < readLines.size(); ++i) // this whole loop will require removal as testing has been a success
+        // output for testing (remove soon)
+        for (std::size_t i = 0; i < readLines.size(); ++i) 
         {
             std::cout << testingPrintOrder[i] << readLines[i] << std::endl;
+
         }
+
+
 
         MyReadFile.close(); // close the file 
     }
