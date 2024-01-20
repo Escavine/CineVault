@@ -616,7 +616,8 @@ void newPassword(std::string email)
 
 
 
-bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::string& email) {
+bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::string& clientEmail) 
+{
     bool otpConfirmed = false;
     std::string inputtedOTP;
 
@@ -633,7 +634,7 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
         {
             std::cout << "OTP is valid, success." << std::endl;
             otpConfirmed = true;
-            newPassword(email);  // user can now create a new password
+            newPassword(clientEmail);
         }
         else
         {
@@ -666,10 +667,10 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
 
 
 
-void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& clientEmail, const std::string& generatedOTP)
+void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& clientEmail, const std::string& generatedOTP, int otpChances)
 {
     int smtpPort = 587; // SMTP protocol port number for secure transmission
-    std::string smtpServer = "smtp.gmail.com"; // SMTP for Google
+    std::string smtpServer = "smtp.gmail.com"; // Google SMTP
     std::string subject = "OTP Confirmation Code"; // subject for the POST request
 
     CURL* curl = curl_easy_init();
@@ -690,7 +691,7 @@ void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& c
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
         // Creating the body
-        curl_mime* mime = curl_mime_init();
+        curl_mime* mime = curl_mime_init(curl);
         curl_mimepart* textPart = curl_mime_addpart(mime);
         curl_mime_data(textPart, ("Dear user, \n\nYour OTP for the confirmation is: " + generatedOTP + "\n\nBest regards, \nCineVault").c_str(), CURL_ZERO_TERMINATED);
 
@@ -700,10 +701,22 @@ void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& c
         // Perform the email sending request
         CURLcode res = curl_easy_perform(curl);
 
+        if (res != CURLE_OK)
+        {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+
+        }
+        else
+        {
+            std::cout << "OTP has been successfully sent, check your email, or if it is not present, then your spam." << std::endl;
+        }
+
         // Cleanup
         curl_slist_free_all(headers);
         curl_mime_free(mime);
         curl_easy_cleanup(curl);
+
+        verifyOTP(generatedOTP, otpChances, clientEmail);
     }
 }
 
@@ -786,7 +799,8 @@ void OTP(std::string clientEmail) // should the users email exist in the databas
     std::string generatedOTP = generateOTP(clientEmail, time, timeStep); // dynamic OTP will be generated
     std::cout << "OTP: " << generatedOTP << " (testing measure)" << "\n" << std::endl; // will be removed once OTP can be successfully sent to the recipient
 
-    sendOTPByEmail(smtpEmail, smtpPass, clientEmail, generatedOTP); // function call to send OTP vai email
+    // Function call to send the OTP to user
+    sendOTPByEmail(smtpEmail, smtpPass, clientEmail, generatedOTP, otpChances); 
 
 }
 
