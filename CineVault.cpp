@@ -674,7 +674,7 @@ void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& c
     std::string subject = "OTP Confirmation Code"; // subject for the POST request
 
     CURL* curl = curl_easy_init();
-    if (curl) 
+    if (curl)
     {
         // Set SMTP server and credentials
         curl_easy_setopt(curl, CURLOPT_URL, smtpServer.c_str());
@@ -684,7 +684,8 @@ void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& c
 
         // Compose email
         struct curl_slist* headers = nullptr;
-        headers = curl_slist_append(headers, "From: thelollipopcreamytber@gmail.com");
+        headers = curl_slist_append(headers, ("From: " + smtpEmail).c_str());
+        headers = curl_slist_append(headers, ("To: " + clientEmail).c_str());
         headers = curl_slist_append(headers, ("Subject: " + subject).c_str());
 
         // ... Set email headers and body ...
@@ -704,7 +705,6 @@ void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& c
         if (res != CURLE_OK)
         {
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-
         }
         else
         {
