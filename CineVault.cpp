@@ -775,13 +775,13 @@ void OTP(std::string clientEmail) // should the users email exist in the databas
             if (i == 0)
             {
                 smtpEmail = readLines[i];
-                std::cout << "Stored email: " << smtpEmail << std::endl; // testing measure
+                std::cout << "SMTP Email: " + smtpEmail << std::endl; // testing measure
 
             }
             else if (i == 1)
             {
                 smtpPass = readLines[i];
-                std::cout << "Stored password: " << smtpPass << std::endl; // testing measure
+                std::cout << "SMTP Password: " << smtpPass << std::endl; // testing measure
             }
         }
 
@@ -853,6 +853,10 @@ void checkForUserEmail(int userChoice, int userAttempts)
     if (isValidEmailAddress(clientEmail))
     {
         std::cout << "User email format is valid." << std::endl;
+        
+
+        // testing measure
+        std::cout << "Confirmed email: " + clientEmail << std::endl;
 
         // Future reference: create a function to ensure that the users email actually exists in the database
         OTP(clientEmail); // direct the user to the forgot password function
