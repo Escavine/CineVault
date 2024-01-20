@@ -670,10 +670,11 @@ void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& c
 {
     int smtpPort = 587; // SMTP protocol port number for secure transmission
     std::string smtpServer = "smtp.gmail.com"; // SMTP for Google
+    std::string subject = "OTP Confirmation Code"; // subject for the POST request
 
     CURL* curl = curl_easy_init();
-    CURL* headers;
-    if (curl) {
+    if (curl) 
+    {
         // Set SMTP server and credentials
         curl_easy_setopt(curl, CURLOPT_URL, smtpServer.c_str());
         curl_easy_setopt(curl, CURLOPT_PORT, smtpPort);
@@ -681,21 +682,29 @@ void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& c
         curl_easy_setopt(curl, CURLOPT_PASSWORD, smtpPass.c_str());
 
         // Compose email
-        curl_mime* mime = curl_mime_init(curl);
-        curl_mimepart* headers = curl_mime_addpart(mime);
-        curl_mime_data(headers, "From: ", std::size_t smtpEmail, CURL_ZERO_TERMINATED);
+        struct curl_slist* headers = nullptr;
+        headers = curl_slist_append(headers, "From: thelollipopcreamytber@gmail.com");
+        headers = curl_slist_append(headers, ("Subject: " + subject).c_str());
 
         // ... Set email headers and body ...
-        curl_easy_setopt(curl, CURLOPT_MAIL)
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        // Creating the body
+        curl_mime* mime = curl_mime_init();
+        curl_mimepart* textPart = curl_mime_addpart(mime);
+        curl_mime_data(textPart, ("Dear user, \n\nYour OTP for the confirmation is: " + generatedOTP + "\n\nBest regards, \nCineVault").c_str(), CURL_ZERO_TERMINATED);
+
+        // Setting up the MIME structure for the request
+        curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
 
         // Perform the email sending request
         CURLcode res = curl_easy_perform(curl);
 
         // Cleanup
-        curl_easy_cleanup(curl);
+        curl_slist_free_all(headers);
         curl_mime_free(mime);
-
-
+        curl_easy_cleanup(curl);
+    }
 }
 
 
