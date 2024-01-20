@@ -668,24 +668,34 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
 
 void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& clientEmail, const std::string& generatedOTP)
 {
-    try {
-        Poco::Net::MailMessage msg;
-        int smtpPort = 587; // SMTP protocol port number for secure transmission
-        std::string smtpServer = "smtp.gmail.com"; // SMTP for Google
-        msg.addRecipient(Poco::Net::MailRecipient(Poco::Net::MailRecipient::PRIMARY_RECIPIENT, clientEmail));
-        msg.setSubject("OTP Confirmation");
-        msg.setContent("Dear User,\n\nYour OTP for confirmation is: " + generatedOTP + "\n\nBest regards,\nCineVault");
-        
-        Poco::Net::SMTPClientSession smtp(smtpServer, smtpPort);
-        smtp.login(Poco::Net::SMTPClientSession::AUTH_LOGIN, smtpEmail, smtpPass); // Use PLAIN authentication
+    int smtpPort = 587; // SMTP protocol port number for secure transmission
+    std::string smtpServer = "smtp.gmail.com"; // SMTP for Google
 
-        smtp.sendMessage(msg);
-        smtp.close();
-    }
-    catch (Poco::Exception& e) {
-        std::cerr << "Error: " << e.displayText() << std::endl;
-        // Handle the exception appropriately (log, throw, etc.)
-    }
+    CURL* curl = curl_easy_init();
+    CURL* headers;
+    if (curl) {
+        // Set SMTP server and credentials
+        curl_easy_setopt(curl, CURLOPT_URL, smtpServer.c_str());
+        curl_easy_setopt(curl, CURLOPT_PORT, smtpPort);
+        curl_easy_setopt(curl, CURLOPT_USERNAME, smtpEmail.c_str());
+        curl_easy_setopt(curl, CURLOPT_PASSWORD, smtpPass.c_str());
+
+        // Compose email
+        curl_mime* mime = curl_mime_init(curl);
+        curl_mimepart* headers = curl_mime_addpart(mime);
+        curl_mime_data(headers, "From: ", std::size_t smtpEmail, CURL_ZERO_TERMINATED);
+
+        // ... Set email headers and body ...
+        curl_easy_setopt(curl, CURLOPT_MAIL)
+
+        // Perform the email sending request
+        CURLcode res = curl_easy_perform(curl);
+
+        // Cleanup
+        curl_easy_cleanup(curl);
+        curl_mime_free(mime);
+
+
 }
 
 
