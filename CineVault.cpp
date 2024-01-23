@@ -1,24 +1,36 @@
 // CineVault: Movie Search and Collection App
 
 #include <iostream>
-#include <curl/curl.h> // API usage
-#include <Poco/Poco.h> // SMTP purposes
-#include <Poco/Net/MailMessage.h>
-#include <Poco/Net/SMTPClientSession.h> 
-#include <sqlite3.h> // Database usage
-#include <chrono>
 #include <string>
 #include <fstream>
-#include <stdio.h>
+#include <chrono>
+#include <cstdlib>
 #include <iomanip>
 #include <ctime>
-#include <cstdlib>
+
+#include <sqlite3.h> // Database usage
+
 #include <cryptopp/hmac.h>
-#include <cryptopp/sha.h> // encryption usage
+#include <cryptopp/sha.h> // Encryption usage
 #include <cryptopp/base32.h>
 #include <cryptopp/filters.h>
-#include <cpprest/oauth2.h> // implementation of oauth2 for authentication purposes
+
+#include <curl/curl.h> // API usage
+
+#include <cpprest/oauth2.h> // Implementation of OAuth2 for authentication purposes
 #include <cpprest/http_client.h>
+
+#include <Poco/Poco.h> // SMTP purposes
+#include <Poco/Net/MailMessage.h>
+#include <Poco/Net/Context.h>
+#include <Poco/Net/Exception.h>
+#include <Poco/Net/SMTPClientSession.h>
+#include <Poco/Net/SecureSMTPClientSession.h>
+
+
+#include <httplib.h>
+
+
 
 
 
@@ -667,59 +679,31 @@ bool verifyOTP(const std::string& generatedOTP, int& otpChances, const std::stri
 
 
 
-void sendOTPByEmail(std::string smtpEmail, std::string& smtpPass, std::string& clientEmail, const std::string& generatedOTP, int otpChances)
+void sendOTPByEmail(const std::string& smtpEmail, const std::string& smtpPass, const std::string& clientEmail, const std::string& generatedOTP, int& otpChances)
 {
-    int smtpPort = 587; // SMTP protocol port number for secure transmission
-    std::string smtpServer = "smtp.gmail.com"; // Google SMTP
-    std::string subject = "OTP Confirmation Code"; // subject for the POST request
+    int smtpPort = 587;
+    std::string smtpServer = "smtp.gmail.com";
 
-    CURL* curl = curl_easy_init();
-    if (curl)
+    Poco::Net::MailMessage msg;
+    msg.addRecipient(Poco::Net::MailRecipient(Poco::Net::MailRecipient::PRIMARY_RECIPIENT, clientEmail));
+    msg.setSubject("OTP Confirmation");
+    msg.setContent("Dear User,\n\nYour OTP for confirmation is: " + generatedOTP + "\n\nBest regards,\nCineVault");
+
+    try
     {
-        // Set SMTP server and credentials
-        curl_easy_setopt(curl, CURLOPT_URL, smtpServer.c_str());
-        curl_easy_setopt(curl, CURLOPT_PORT, smtpPort);
-        curl_easy_setopt(curl, CURLOPT_USERNAME, smtpEmail.c_str());
-        curl_easy_setopt(curl, CURLOPT_PASSWORD, smtpPass.c_str());
-
-        // Compose email
-        struct curl_slist* headers = nullptr;
-        headers = curl_slist_append(headers, ("From: " + smtpEmail).c_str());
-        headers = curl_slist_append(headers, ("To: " + clientEmail).c_str());
-        headers = curl_slist_append(headers, ("Subject: " + subject).c_str());
-
-        // ... Set email headers and body ...
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-        // Creating the body
-        curl_mime* mime = curl_mime_init(curl);
-        curl_mimepart* textPart = curl_mime_addpart(mime);
-        curl_mime_data(textPart, ("Dear user, \n\nYour OTP for the confirmation is: " + generatedOTP + "\n\nBest regards, \nCineVault").c_str(), CURL_ZERO_TERMINATED);
-
-        // Setting up the MIME structure for the request
-        curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
-
-        // Perform the email sending request
-        CURLcode res = curl_easy_perform(curl);
-
-        if (res != CURLE_OK)
-        {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        }
-        else
-        {
-            std::cout << "OTP has been successfully sent, check your email, or if it is not present, then your spam." << std::endl;
-        }
-
-        // Cleanup
-        curl_slist_free_all(headers);
-        curl_mime_free(mime);
-        curl_easy_cleanup(curl);
-
-        verifyOTP(generatedOTP, otpChances, clientEmail);
+        Poco::Net::Context::Ptr context = new Poco::Net::Context(Poco::Net::Context::CLIENT_USE, "", "", "", Poco::Net::Context::VERIFY_RELAXED, 9, true, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+        Poco::Net::SMTPClientSession smtp(smtpServer, smtpPort, context);
+        smtp.login(Poco::Net::SMTPClientSession::AUTH_LOGIN, smtpEmail, smtpPass);
+        smtp.startTLS(context);
+        smtp.sendMessage(msg);
+        smtp.close();
+    }
+    catch (Poco::Exception& e)
+    {
+        std::cerr << "Error: " << e.displayText() << std::endl;
+        // Handle the exception appropriately (log, throw, etc.)
     }
 }
-
 
 
 std::string generateOTP(std::string email, uint64_t time, int timeStep)
