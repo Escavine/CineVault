@@ -1,12 +1,6 @@
-# CineVault: Movie Search and Collection App
+# Student Monitor
 
-CineVault is a C++ movie searching app dedicated to all users. It allows you to search for movies and store them in your database for future watching.
+StudentMonitor is a C++ application that will allow for teachers to be able to monitor student progression (i.e. attendance, punctuality, grades etc.)
 
-This repository is ongoing development, and will be including more libraries and features with time.
+This repository is currently undergoing development.
 
-## Libraries used
-- sqlite3
-- cURL API
-- crypto++
-- mailio
-- poco
