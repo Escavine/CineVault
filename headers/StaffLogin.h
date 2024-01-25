@@ -1,6 +1,11 @@
 #pragma once
 #include "sqlite3.h" // Database usage
 #include "curl/curl.h" // API usage
+#include "msclr/marshal_cppstd.h"
+#include "vcclr.h"
+#include "comutil.h"
+#include "msclr/marshal.h"
+
 
 namespace StudentMonitor {
 
@@ -10,6 +15,8 @@ namespace StudentMonitor {
 	using namespace System::Windows::Forms;
 	using namespace System::Data;
 	using namespace System::Drawing;
+	using namespace msclr::interop;
+	using namespace std;
 
 	/// <summary>
 	/// Summary for StaffLogin
@@ -224,15 +231,27 @@ namespace StudentMonitor {
 
 		}
 #pragma endregion
-	private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e) {
-	}
-private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ e) {
+
+private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e) 
+{
 }
-private: System::Void label4_Click(System::Object^ sender, System::EventArgs^ e) {
+private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ e) 
+{
 }
-private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
+private: System::Void label4_Click(System::Object^ sender, System::EventArgs^ e) 
+{
+}
+private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) 
+{
 	Application::Exit();
 }
+
+const char* ConvertToConstChar(String^ str) {
+	marshal_context context;
+	return context.marshal_as<const char*>(str);
+}
+
+
 private: System::Void button1_Click_1(System::Object^ sender, System::EventArgs^ e) {
 	sqlite3* db; // Communicating with database
 	sqlite3_stmt* stmt;
@@ -244,16 +263,65 @@ private: System::Void button1_Click_1(System::Object^ sender, System::EventArgs^
 	{
 		MessageBox::Show("Error loading database. Error code: " + Convert::ToString(sqlite3_errcode(db)) +
 			". Error message: " + gcnew String(sqlite3_errmsg(db)));
+		return;
 	}
 
-	
-	// take in the following inputs (username and password)
+	// converting from string to char format
+
 	String^ staffUser = textBox1->Text;
+	const char* un = ConvertToConstChar(staffUser);
+
 	String^ staffPassword = maskedTextBox1->Text;
+	const char* pw = ConvertToConstChar(staffPassword);
 
-	const char* confirmIdentity = "SELECT staffUsername, staffPassword FROM staff WHERE staffUsername = ?, staffPassword = ?"
+	// preparing the statement
+	const char* confirmIdentity = "SELECT staffUsername, staffPassword FROM staff WHERE staffUsername = ? AND staffPassword = ?";
 
+	rc = sqlite3_prepare_v2(db, confirmIdentity, -1, &stmt, nullptr);
 
+	if (rc != SQLITE_OK)
+	{
+		MessageBox::Show("Error preparing SQL statement. Error code: " + Convert::ToString(sqlite3_errcode(db)) + ". Error message: " + gcnew String(sqlite3_errmsg(db)));
+		sqlite3_close(db);
+		return;
+	}
+
+	rc = sqlite3_bind_text(stmt, 1, un, -1, SQLITE_STATIC);
+
+	if (rc != SQLITE_OK)
+	{
+		MessageBox::Show("Error preparing username data. Error code: " + Convert::ToString(sqlite3_errcode(db)) + ". Error message: " + gcnew String(sqlite3_errmsg(db)));
+		sqlite3_finalize(stmt);
+		sqlite3_close(db);
+		return;
+	}
+
+	rc = sqlite3_bind_text(stmt, 2, pw, -1, SQLITE_STATIC);
+
+	if (rc != SQLITE_OK)
+	{
+		MessageBox::Show("Error preparing password data. Error code: " + Convert::ToString(sqlite3_errcode(db)) + ". Error message: " + gcnew String(sqlite3_errmsg(db)));
+		sqlite3_finalize(stmt);
+		sqlite3_close(db);
+		return;
+	}
+
+	// execute the statement
+	int result = sqlite3_step(stmt);
+
+	if (result == SQLITE_ROW)
+	{
+		int UID = sqlite3_column_int(stmt, 0); // retrieve the userID
+		MessageBox::Show("User authenticated, your details have been logged for safety purposes.");
+	}
+	else
+	{
+		MessageBox::Show("Incorrect login details, please try again.");
+	}
+
+	// finalize the statement and close the database connection
+	sqlite3_finalize(stmt);
+	sqlite3_close(db);
 }
 private: System::Void textBox1_TextChanged(System::Object^ sender, System::EventArgs^ e) {
 
