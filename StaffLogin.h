@@ -1,4 +1,6 @@
 #pragma once
+#include "sqlite3.h" // Database usage
+#include "curl/curl.h" // API usage
 
 namespace StudentMonitor {
 
@@ -122,6 +124,7 @@ namespace StudentMonitor {
 			this->textBox1->Name = L"textBox1";
 			this->textBox1->Size = System::Drawing::Size(219, 16);
 			this->textBox1->TabIndex = 3;
+			this->textBox1->TextChanged += gcnew System::EventHandler(this, &StaffLogin::textBox1_TextChanged);
 			// 
 			// maskedTextBox1
 			// 
@@ -133,6 +136,7 @@ namespace StudentMonitor {
 			this->maskedTextBox1->Name = L"maskedTextBox1";
 			this->maskedTextBox1->Size = System::Drawing::Size(219, 16);
 			this->maskedTextBox1->TabIndex = 4;
+			this->maskedTextBox1->MaskInputRejected += gcnew System::Windows::Forms::MaskInputRejectedEventHandler(this, &StaffLogin::maskedTextBox1_MaskInputRejected);
 			// 
 			// panel1
 			// 
@@ -193,7 +197,7 @@ namespace StudentMonitor {
 			this->label4->Text = L"StudentMonitor";
 			this->label4->Click += gcnew System::EventHandler(this, &StaffLogin::label4_Click);
 			// 
-			// LoginForm
+			// StaffLogin
 			// 
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::None;
 			this->BackColor = System::Drawing::Color::Black;
@@ -230,7 +234,31 @@ private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e
 	Application::Exit();
 }
 private: System::Void button1_Click_1(System::Object^ sender, System::EventArgs^ e) {
-	Application::Exit();
+	sqlite3* db; // Communicating with database
+	sqlite3_stmt* stmt;
+	int rc; // return code
+
+	rc = sqlite3_open("staff.db", &db);
+
+	if (rc != SQLITE_OK)
+	{
+		MessageBox::Show("Error loading database. Error code: " + Convert::ToString(sqlite3_errcode(db)) +
+			". Error message: " + gcnew String(sqlite3_errmsg(db)));
+	}
+
+	
+	// take in the following inputs (username and password)
+	String^ staffUser = textBox1->Text;
+	String^ staffPassword = maskedTextBox1->Text;
+
+	const char* confirmIdentity = "SELECT staffUsername, staffPassword FROM staff WHERE staffUsername = ?, staffPassword = ?"
+
+
+}
+private: System::Void textBox1_TextChanged(System::Object^ sender, System::EventArgs^ e) {
+
+}
+private: System::Void maskedTextBox1_MaskInputRejected(System::Object^ sender, System::Windows::Forms::MaskInputRejectedEventArgs^ e) {
 }
 };
 }
