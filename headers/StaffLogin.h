@@ -1,106 +1,27 @@
 #pragma once
-#include "iostream"
-#include "sqlite3.h" // Database usage
-#include "curl/curl.h" // API usage
-#include "StaffLogin.h"
-#include "msclr/marshal.h"
-#include "msclr/marshal_cppstd.h"
+#include <sqlite3.h>
+#include <string>
 
-namespace StudentMonitor 
+
+namespace StudentMonitor
 {
-
-	// handling SQL to ensure authenticity
-	class DatabaseOperations
-	{
-	public:
-		DatabaseOperations(System::String^ username, System::String^ password);
-		~DatabaseOperations();
-
-		bool AuthenticateUser(System::String^ username, System::String^ password);
-
-	private:
-		sqlite3* db;
-		sqlite3_stmt* stmt;
-	};
-
-	DatabaseOperations::DatabaseOperations(System::String^ username, System::String^ password)
-	{
-		int rc = sqlite3_open("staff.db", &db);
-
-		if (rc != SQLITE_OK)
-		{
-			MessageBox::Show("Error opening database!");
-			std::cerr << "Error code: " << sqlite3_errcode(db) << "\n" << "Error message: " << sqlite3_errmsg(db);
-		};
-
-		AuthenticateUser(username, password);
-
-	};
-
-	// Destructor
-	DatabaseOperations::~DatabaseOperations()
-	{
-		sqlite3_close(db);
-	};
-
-
-	bool DatabaseOperations::AuthenticateUser(System::String^ username, System::String^ password)
-	{
-		const char* confirmIdentity = "SELECT staffUsername, staffPassword FROM staff WHERE staffUsername = ? AND staffPassword = ?";
-		
-		int rc = sqlite3_prepare_v2(db, confirmIdentity, -1, &stmt, nullptr);
-
-		if (rc != SQLITE_OK)
-		{
-			MessageBox::Show("Error preparing authentication statement!");
-			std::cerr << "Error code: " << sqlite3_errcode(db) << "\n" << "Error message: " << sqlite3_errmsg(db);
-		};
-
-		const char* un = msclr::interop::marshal_as<const char*>(username);
-		const char* pw = msclr::interop::marshal_as<const char*>(password);
-
-		rc = sqlite3_bind_text(stmt, 1, un, -1, SQLITE_STATIC);
-		
-		if (rc != SQLITE_OK)
-		{
-			MessageBox::Show("Error binding username!");
-			std::cerr << "Error code: " << sqlite3_errcode(db) << "\n" << "Error message: " << sqlite3_errmsg(db);
-		}
-		rc = sqlite3_bind_text(stmt, 2, pw, -1, SQLITE_STATIC);
-
-		if (rc != SQLITE_OK)
-		{
-			MessageBox::Show("Error binding password!");
-			std::cerr << "Error code: " << sqlite3_errcode(db) << "\n" << "Error message: " << sqlite3_errmsg(db);
-		}
-
-
-
-	};
-
-
-
-
-
-	};
-	
-
 	using namespace System;
 	using namespace System::ComponentModel;
 	using namespace System::Collections;
 	using namespace System::Windows::Forms;
 	using namespace System::Data;
-	using namespace System::Drawing;
+	using namespace System::Data::SQLite;
 
 	/// <summary>
 	/// Summary for StaffLogin
 	/// </summary>
-	public ref class StaffLogin : public System::Windows::Forms::Form
-	{
+	public ref class StaffLogin : public System::Windows::Forms::Form {
 	public:
 		StaffLogin(void)
 		{
 			InitializeComponent();
+
+
 			//
 			//TODO: Add the constructor code here
 			//
@@ -135,7 +56,8 @@ namespace StudentMonitor
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
-		System::ComponentModel::Container ^components;
+		System::ComponentModel::Container^ components;
+
 
 #pragma region Windows Form Designer generated code
 		/// <summary>
@@ -205,7 +127,6 @@ namespace StudentMonitor
 			this->textBox1->Name = L"textBox1";
 			this->textBox1->Size = System::Drawing::Size(219, 16);
 			this->textBox1->TabIndex = 3;
-			this->textBox1->TextChanged += gcnew System::EventHandler(this, &StaffLogin::textBox1_TextChanged);
 			// 
 			// maskedTextBox1
 			// 
@@ -262,7 +183,7 @@ namespace StudentMonitor
 			this->button1->TabIndex = 9;
 			this->button1->Text = L"Login";
 			this->button1->UseVisualStyleBackColor = false;
-			this->button1->Click += gcnew System::EventHandler(this, &StaffLogin::button1_Click_1);
+			this->button1->Click += gcnew System::EventHandler(this, &StaffLogin::button1_Click);
 			// 
 			// label4
 			// 
@@ -305,41 +226,74 @@ namespace StudentMonitor
 		}
 #pragma endregion
 
-private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e) 
-{
+		std::string ConvertToStdString(String^ source)
+		{
+			if (source != nullptr)
+			{
+				array<System::Byte>^ bytes = System::Text::Encoding::UTF8->GetBytes(source);
+				pin_ptr<System::Byte> pinnedBytes = &bytes[0];
+				std::string result(reinterpret_cast<char*>(pinnedBytes), bytes->Length);
+				return result;
+			}
+			return "";
+		}
+
+	private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e)
+	{
+		String^ username = textBox1->Text;
+		String^ password = maskedTextBox1->Text;
+
+
+		std::string usernameStr = ConvertToStdString(username);
+		std::string passwordStr = ConvertToStdString(password);
+
+		SQLiteConnection^ sqlite_conn;
+		SQLiteCommand^ sqlite_cmd;
+		SQLiteDataReader sqlite_datareader;
+
+		try
+		{
+			String^ dbPath = "staff.db";
+			sqlite_conn = gcnew SQLiteConnection("Data Source=" + dbPath);
+			sqlite_conn->Open();
+
+			String^ query = "SELECT * FROM staff WHERE staffUsername = @username AND staffPassword = @password";
+
+		}
+		catch (Exception^ ex)
+		{
+
+
+		}
+		finally
+		{
+
+
+		}
+
+
+	}
+
+
+	private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ e)
+	{
 
 
 
-}
-private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ e) 
-{
+	}
+	private: System::Void label4_Click(System::Object^ sender, System::EventArgs^ e)
+	{
 
 
+	}
 
-}
-private: System::Void label4_Click(System::Object^ sender, System::EventArgs^ e) 
-{
+	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e)
+	{
+		Application::Exit();
 
+	}
 
-}
-private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) 
-{
-	Application::Exit();
-}
+	};
+};
 
-
-
-private: System::Void button1_Click_1(System::Object^ sender, System::EventArgs^ e) 
-{
-
-
-
-}
-
-
-private: System::Void textBox1_TextChanged(System::Object^ sender, System::EventArgs^ e) 
-{
-
-
-}
 
