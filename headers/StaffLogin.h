@@ -253,11 +253,34 @@ namespace StudentMonitor
 
 		try
 		{
+			// opening the database (staff.db)
 			String^ dbPath = "staff.db";
 			sqlite_conn = gcnew SQLiteConnection("Data Source=" + dbPath);
 			sqlite_conn->Open();
 
-			String^ query = "SELECT * FROM staff WHERE staffUsername = @username AND staffPassword = @password";
+			// structuring the query 
+			String^ query = "SELECT * FROM staff WHERE staffUsername = @username AND staffPassword = @password;";
+
+			// Adding parameters of specific types
+			sqlite_cmd = gcnew SQLiteCommand(query, sqlite_conn);
+			sqlite_cmd->Parameters->Add(gcnew SQLiteParameter("@username", DbType::String));
+			sqlite_cmd->Parameters->Add(gcnew SQLiteParameter("@password", DbType::String));
+
+			// set parameter values
+			sqlite_cmd->Parameters["@username"]->Value = username;
+			sqlite_cmd->Parameters["@password"]->Value = password;
+
+			Object^ result = sqlite_cmd->ExecuteScalar();
+
+			if (result != nullptr && Convert::ToInt32(result) < 0)
+			{
+				MessageBox::Show("Login successful!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
+
+			}
+			else
+			{
+				MessageBox::Show("Invalid username or password!", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			}
 
 		}
 		catch (Exception^ ex)
