@@ -1,6 +1,5 @@
 #pragma once
-#include <sqlite3.h>
-#include <string>
+#include <vcclr.h>
 
 
 namespace StudentMonitor
@@ -10,7 +9,7 @@ namespace StudentMonitor
 	using namespace System::Collections;
 	using namespace System::Windows::Forms;
 	using namespace System::Data;
-	using namespace System::Data::SQLite;
+	using namespace System::Data::SqlClient;
 
 	/// <summary>
 	/// Summary for StaffLogin
@@ -101,9 +100,9 @@ namespace StudentMonitor
 			this->label2->ForeColor = System::Drawing::SystemColors::Control;
 			this->label2->Location = System::Drawing::Point(12, 90);
 			this->label2->Name = L"label2";
-			this->label2->Size = System::Drawing::Size(71, 19);
+			this->label2->Size = System::Drawing::Size(41, 19);
 			this->label2->TabIndex = 1;
-			this->label2->Text = L"Username";
+			this->label2->Text = L"Email";
 			// 
 			// label3
 			// 
@@ -127,6 +126,7 @@ namespace StudentMonitor
 			this->textBox1->Name = L"textBox1";
 			this->textBox1->Size = System::Drawing::Size(219, 16);
 			this->textBox1->TabIndex = 3;
+			this->textBox1->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &StaffLogin::textBox1_KeyDown);
 			// 
 			// maskedTextBox1
 			// 
@@ -138,6 +138,8 @@ namespace StudentMonitor
 			this->maskedTextBox1->Name = L"maskedTextBox1";
 			this->maskedTextBox1->Size = System::Drawing::Size(219, 16);
 			this->maskedTextBox1->TabIndex = 4;
+			this->maskedTextBox1->MaskInputRejected += gcnew System::Windows::Forms::MaskInputRejectedEventHandler(this, &StaffLogin::maskedTextBox1_MaskInputRejected);
+			this->maskedTextBox1->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &StaffLogin::maskedTextBox1_KeyDown);
 			// 
 			// panel1
 			// 
@@ -226,74 +228,35 @@ namespace StudentMonitor
 		}
 #pragma endregion
 
-		std::string ConvertToStdString(String^ source)
-		{
-			if (source != nullptr)
-			{
-				array<System::Byte>^ bytes = System::Text::Encoding::UTF8->GetBytes(source);
-				pin_ptr<System::Byte> pinnedBytes = &bytes[0];
-				std::string result(reinterpret_cast<char*>(pinnedBytes), bytes->Length);
-				return result;
-			}
-			return "";
-		}
-
 	private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e)
 	{
-		String^ username = textBox1->Text;
+		String^ email = textBox1->Text;
 		String^ password = maskedTextBox1->Text;
 
 
-		std::string usernameStr = ConvertToStdString(username);
-		std::string passwordStr = ConvertToStdString(password);
-
-		SQLiteConnection^ sqlite_conn;
-		SQLiteCommand^ sqlite_cmd;
-		SQLiteDataReader sqlite_datareader;
+		// If input is empty
+		if (email->Length == 0 || password->Length == 0)
+		{
+			MessageBox::Show("Please enter email or password");
+		}
 
 		try
 		{
-			// opening the database (staff.db)
-			String^ dbPath = "staff.db";
-			sqlite_conn = gcnew SQLiteConnection("Data Source=" + dbPath);
-			sqlite_conn->Open();
+			// connect to the database
+			String^ connString = "Data Source=localhost\\sqlexpress;Initial Catalog=staff;Integrated Security=True;Encrypt=False;Trust Server Certificate=True";
+			SqlConnection sqlConn(connString);
+			sqlConn.Open();
 
-			// structuring the query 
-			String^ query = "SELECT * FROM staff WHERE staffUsername = @username AND staffPassword = @password;";
+			// defining the query
+			String^ userAuthenticate = "SELECT * FROM staff WHERE email=@staffEmail AND password=@staffPassword";
 
-			// Adding parameters of specific types
-			sqlite_cmd = gcnew SQLiteCommand(query, sqlite_conn);
-			sqlite_cmd->Parameters->Add(gcnew SQLiteParameter("@username", DbType::String));
-			sqlite_cmd->Parameters->Add(gcnew SQLiteParameter("@password", DbType::String));
-
-			// set parameter values
-			sqlite_cmd->Parameters["@username"]->Value = username;
-			sqlite_cmd->Parameters["@password"]->Value = password;
-
-			Object^ result = sqlite_cmd->ExecuteScalar();
-
-			if (result != nullptr && Convert::ToInt32(result) < 0)
-			{
-				MessageBox::Show("Login successful!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
-
-			}
-			else
-			{
-				MessageBox::Show("Invalid username or password!", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
-			}
 
 		}
-		catch (Exception^ ex)
+		catch (Exception^ e)
 		{
-
-
+			MessageBox::Show("Error loading database ");
+			return;
 		}
-		finally
-		{
-
-
-		}
-
 
 	}
 
@@ -312,11 +275,30 @@ namespace StudentMonitor
 
 	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e)
 	{
+		MessageBox::Show("Your session will now be terminated...");
 		Application::Exit();
 
 	}
 
-	};
+	private: System::Void textBox1_KeyDown(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
+		if (e->KeyValue == (int)Keys::Enter)
+		{
+			maskedTextBox1->Focus();
+
+		}
+
+	}
+private: System::Void maskedTextBox1_MaskInputRejected(System::Object^ sender, System::Windows::Forms::MaskInputRejectedEventArgs^ e) {
+
+}
+private: System::Void maskedTextBox1_KeyDown(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
+	if (e->KeyValue == (int)Keys::Enter)
+	{
+		button1->PerformClick();
+
+	}
+}
+};
 };
 
 
