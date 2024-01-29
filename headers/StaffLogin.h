@@ -251,12 +251,22 @@ namespace StudentMonitor
 
 			// defining the query
 			String^ userAuthenticate = "SELECT * FROM staff WHERE email=@staffEmail AND password=@staffPassword";
-			
+
 			SqlCommand command(userAuthenticate, % sqlConn);
 			command.Parameters->AddWithValue("@staffEmail", email);
 			command.Parameters->AddWithValue("@staffPassword", password);
 
 			SqlDataReader^ reader = command.ExecuteReader();
+
+			if (reader->Read())
+			{
+				this->Close();
+			}
+			else
+			{
+				MessageBox::Show("Email or password is incorrect", "Error with email or password", MessageBoxButtons::OK);
+
+			}
 		}
 		catch (Exception^ e)
 		{
