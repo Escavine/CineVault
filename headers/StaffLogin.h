@@ -1,5 +1,6 @@
 #pragma once
-#include <vcclr.h>
+#include "vcclr.h"
+#include "user.h"
 
 
 namespace StudentMonitor
@@ -230,6 +231,9 @@ namespace StudentMonitor
 		}
 #pragma endregion
 
+	// global user variable
+	public: User^ user = nullptr;
+
 	private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e)
 	{
 		String^ email = textBox1->Text;
@@ -260,6 +264,18 @@ namespace StudentMonitor
 
 			if (reader->Read())
 			{
+				user = gcnew User;
+
+				// inserting all relevant details into a class
+				user->id = reader->GetInt32(0);
+				user->name = reader->GetString(1);
+				user->surname = reader->GetString(2);
+				user->age = reader->GetInt32(3);
+				user->gender = reader->GetString(4);
+				user->email = reader->GetString(5);
+				user->password = reader->GetString(6);
+
+
 				this->Close();
 			}
 			else
