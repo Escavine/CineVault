@@ -10,6 +10,8 @@ namespace StudentMonitor
 	using namespace System::Windows::Forms;
 	using namespace System::Data;
 	using namespace System::Data::SqlClient;
+	using namespace System::Data::Sql;
+	using namespace System::Data::SqlTypes;
 
 	/// <summary>
 	/// Summary for StaffLogin
@@ -249,12 +251,16 @@ namespace StudentMonitor
 
 			// defining the query
 			String^ userAuthenticate = "SELECT * FROM staff WHERE email=@staffEmail AND password=@staffPassword";
+			
+			SqlCommand command(userAuthenticate, % sqlConn);
+			command.Parameters->AddWithValue("@staffEmail", email);
+			command.Parameters->AddWithValue("@staffPassword", password);
 
-
+			SqlDataReader^ reader = command.ExecuteReader();
 		}
 		catch (Exception^ e)
 		{
-			MessageBox::Show("Error loading database ");
+			MessageBox::Show("Error loading database", "Database connection error", MessageBoxButtons::OK);
 			return;
 		}
 
