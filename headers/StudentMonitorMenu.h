@@ -1,4 +1,5 @@
 #pragma once
+#include "StudentMonitorMenu.h"
 #include "StaffLogin.h"
 
 namespace StudentMonitor {
@@ -46,7 +47,7 @@ namespace StudentMonitor {
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
-		System::ComponentModel::Container ^components;
+		System::ComponentModel::Container^ components;
 
 
 #pragma region Windows Form Designer generated code
@@ -144,7 +145,7 @@ namespace StudentMonitor {
 		staffLoginForm->Show();
 	}
 
-private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
-}
-};
+	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
+	}
+	};
 }

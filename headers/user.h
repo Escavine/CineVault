@@ -2,6 +2,7 @@
 
 using namespace System;
 
+// defining the user
 public ref class User {
 public:
 	int id;

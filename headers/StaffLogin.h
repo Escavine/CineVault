@@ -1,8 +1,6 @@
-#pragma once
-#include "vcclr.h"
 #include "user.h"
-
-
+#include "StudentMonitorMenu.h"
+ 
 namespace StudentMonitor
 {
 	using namespace System;
@@ -11,8 +9,7 @@ namespace StudentMonitor
 	using namespace System::Windows::Forms;
 	using namespace System::Data;
 	using namespace System::Data::SqlClient;
-	using namespace System::Data::Sql;
-	using namespace System::Data::SqlTypes;
+
 
 	/// <summary>
 	/// Summary for StaffLogin
@@ -234,6 +231,13 @@ namespace StudentMonitor
 	// global user variable
 	public: User^ user = nullptr;
 
+	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ el)
+	{
+		MessageBox::Show("Your session will now be terminated...");
+		Application::Exit();
+
+	}
+
 	private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e)
 	{
 		String^ email = textBox1->Text;
@@ -293,24 +297,18 @@ namespace StudentMonitor
 	}
 
 
-	private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ e)
+	private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ ez)
 	{
 
 
 
 	}
-	private: System::Void label4_Click(System::Object^ sender, System::EventArgs^ e)
+	private: System::Void label4_Click(System::Object^ sender, System::EventArgs^ ev)
 	{
 
 
 	}
 
-	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e)
-	{
-		MessageBox::Show("Your session will now be terminated...");
-		Application::Exit();
-
-	}
 
 	private: System::Void textBox1_KeyDown(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
 		if (e->KeyValue == (int)Keys::Enter)
@@ -323,8 +321,8 @@ namespace StudentMonitor
 private: System::Void maskedTextBox1_MaskInputRejected(System::Object^ sender, System::Windows::Forms::MaskInputRejectedEventArgs^ e) {
 
 }
-private: System::Void maskedTextBox1_KeyDown(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
-	if (e->KeyValue == (int)Keys::Enter)
+private: System::Void maskedTextBox1_KeyDown(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ ex) {
+	if (ex->KeyValue == (int)Keys::Enter)
 	{
 		button1->PerformClick();
 
