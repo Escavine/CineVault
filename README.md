@@ -1,6 +1,12 @@
 # Student Monitor
 
-StudentMonitor is a C++ application that will allow for teachers to be able to monitor student progression (i.e. attendance, punctuality, grades etc.)
+StudentMonitor is a C++ application designed to facilitate teachers in monitoring student progression (i.e. checking a students grade).
 
-This repository is currently undergoing development.
+## Features
+- **Grades:** Manage and view students' grades efficiently.
+- **Student Information** Manage and view students' information
 
+## Technologies Used
+
+- **C++:** The core programming language used for development.
+- **SQL Server:** Database management system utilized to store and manage student data.
