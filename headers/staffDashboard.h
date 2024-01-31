@@ -47,7 +47,8 @@ namespace StudentMonitor {
 	private: System::Windows::Forms::Button^ studentTrackerButton;
 	private: System::Windows::Forms::Button^ logoutButton;
 	private: System::Windows::Forms::Button^ teachersButton;
-	private: System::Windows::Forms::Button^ reportsButton;
+	private: System::Windows::Forms::Button^ studentgradesButton;
+
 
 
 	protected:
@@ -74,7 +75,7 @@ namespace StudentMonitor {
 			this->studentTrackerButton = (gcnew System::Windows::Forms::Button());
 			this->logoutButton = (gcnew System::Windows::Forms::Button());
 			this->teachersButton = (gcnew System::Windows::Forms::Button());
-			this->reportsButton = (gcnew System::Windows::Forms::Button());
+			this->studentgradesButton = (gcnew System::Windows::Forms::Button());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView1))->BeginInit();
 			this->SuspendLayout();
 			// 
@@ -167,18 +168,19 @@ namespace StudentMonitor {
 			this->teachersButton->UseVisualStyleBackColor = false;
 			this->teachersButton->Click += gcnew System::EventHandler(this, &staffDashboard::teachersButton_Click);
 			// 
-			// reportsButton
+			// studentgradesButton
 			// 
-			this->reportsButton->BackColor = System::Drawing::Color::Black;
-			this->reportsButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
-			this->reportsButton->Font = (gcnew System::Drawing::Font(L"Segoe UI", 10));
-			this->reportsButton->ForeColor = System::Drawing::Color::White;
-			this->reportsButton->Location = System::Drawing::Point(27, 192);
-			this->reportsButton->Name = L"reportsButton";
-			this->reportsButton->Size = System::Drawing::Size(100, 34);
-			this->reportsButton->TabIndex = 18;
-			this->reportsButton->Text = L"Reports";
-			this->reportsButton->UseVisualStyleBackColor = false;
+			this->studentgradesButton->BackColor = System::Drawing::Color::Black;
+			this->studentgradesButton->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->studentgradesButton->Font = (gcnew System::Drawing::Font(L"Segoe UI", 10));
+			this->studentgradesButton->ForeColor = System::Drawing::Color::White;
+			this->studentgradesButton->Location = System::Drawing::Point(27, 192);
+			this->studentgradesButton->Name = L"studentgradesButton";
+			this->studentgradesButton->Size = System::Drawing::Size(100, 34);
+			this->studentgradesButton->TabIndex = 18;
+			this->studentgradesButton->Text = L"Grades";
+			this->studentgradesButton->UseVisualStyleBackColor = false;
+			this->studentgradesButton->Click += gcnew System::EventHandler(this, &staffDashboard::studentgradesButton_Click);
 			// 
 			// staffDashboard
 			// 
@@ -187,7 +189,7 @@ namespace StudentMonitor {
 			this->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Stretch;
 			this->ClientSize = System::Drawing::Size(550, 300);
 			this->Controls->Add(this->dataGridView1);
-			this->Controls->Add(this->reportsButton);
+			this->Controls->Add(this->studentgradesButton);
 			this->Controls->Add(this->teachersButton);
 			this->Controls->Add(this->logoutButton);
 			this->Controls->Add(this->studentTrackerButton);
@@ -229,7 +231,7 @@ private: System::Void studentTrackerButton_Click(System::Object^ sender, System:
 		connection->Open();
 
 		// Initiate the query
-		SqlCommand^ command = gcnew SqlCommand("SELECT * FROM students", connection);
+		SqlCommand^ command = gcnew SqlCommand("SELECT studentID, studentName, studentSurname, studentGender, studentEmail FROM students", connection);
 
 		// Execute the command
 		SqlDataAdapter^ dataAdapter = gcnew SqlDataAdapter(command);
@@ -259,6 +261,7 @@ private: System::Void homeButton_Click(System::Object^ sender, System::EventArgs
 }
 
 private: System::Void teachersButton_Click(System::Object^ sender, System::EventArgs^ e) {
+	dataGridView1->Visible = false;
 	// find database path
 	String^ connectionString = "Data Source=localhost\\sqlexpress;Initial Catalog=staff;Integrated Security=True;Encrypt=False;";
 	SqlConnection^ connection = gcnew SqlConnection(connectionString);
@@ -268,7 +271,42 @@ private: System::Void teachersButton_Click(System::Object^ sender, System::Event
 		connection->Open();
 
 		// Initiate the query
-		SqlCommand^ command = gcnew SqlCommand("SELECT staffName, staffSurname FROM staffMembers", connection);
+		SqlCommand^ command = gcnew SqlCommand("SELECT staffID, staffName, staffSurname FROM staffMembers", connection);
+
+		// Execute the command
+		SqlDataAdapter^ dataAdapter = gcnew SqlDataAdapter(command);
+		DataTable^ dataTable = gcnew DataTable();
+		dataAdapter->Fill(dataTable);
+
+		// Bind the data to the DataGridView
+		dataGridView1->DataSource = dataTable;
+
+		dataGridView1->Visible = true;
+
+	}
+	catch (Exception^ ex) {
+		// Handle exceptions
+		MessageBox::Show("Database connection error: " + ex->Message, "SQL Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+	}
+	finally {
+		// Close the connection in the finally block
+		if (connection->State == ConnectionState::Open) {
+			connection->Close();
+		}
+	}
+}
+private: System::Void studentgradesButton_Click(System::Object^ sender, System::EventArgs^ e) {
+	dataGridView1->Visible = false;
+	// find database path
+	String^ connectionString = "Data Source=localhost\\sqlexpress;Initial Catalog=staff;Integrated Security=True;Encrypt=False;";
+	SqlConnection^ connection = gcnew SqlConnection(connectionString);
+
+	try {
+		// Open the database
+		connection->Open();
+
+		// Initiate the query
+		SqlCommand^ command = gcnew SqlCommand("SELECT gradeID, mathematicsPercentage, physicsPercentage, chemistryPercentage, biologyPercentage, englishlanguagePercentage, isStudentAchieving, studentID FROM studentGrades", connection);
 
 		// Execute the command
 		SqlDataAdapter^ dataAdapter = gcnew SqlDataAdapter(command);
