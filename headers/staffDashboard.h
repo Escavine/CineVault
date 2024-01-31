@@ -13,9 +13,14 @@ namespace StudentMonitor {
 	/// <summary>
 	/// Summary for staffDashboard
 	/// </summary>
+
 	public ref class staffDashboard : public System::Windows::Forms::Form
 	{
+	private:
+		// for displaying the students information
+		System::Windows::Forms::DataGridView^ dataGridView1;
 	public:
+
 		staffDashboard(void)
 		{
 			InitializeComponent();
@@ -53,6 +58,7 @@ namespace StudentMonitor {
 		/// </summary>
 		System::ComponentModel::Container ^components;
 
+
 #pragma region Windows Form Designer generated code
 		/// <summary>
 		/// Required method for Designer support - do not modify
@@ -61,6 +67,7 @@ namespace StudentMonitor {
 		void InitializeComponent(void)
 		{
 			System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(staffDashboard::typeid));
+			this->dataGridView1 = (gcnew System::Windows::Forms::DataGridView());
 			this->label4 = (gcnew System::Windows::Forms::Label());
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->homeButton = (gcnew System::Windows::Forms::Button());
@@ -68,7 +75,16 @@ namespace StudentMonitor {
 			this->logoutButton = (gcnew System::Windows::Forms::Button());
 			this->teachersButton = (gcnew System::Windows::Forms::Button());
 			this->reportsButton = (gcnew System::Windows::Forms::Button());
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView1))->BeginInit();
 			this->SuspendLayout();
+			// 
+			// dataGridView1
+			// 
+			this->dataGridView1->BackgroundColor = System::Drawing::SystemColors::ActiveCaptionText;
+			this->dataGridView1->Location = System::Drawing::Point(206, 47);
+			this->dataGridView1->Name = L"dataGridView1";
+			this->dataGridView1->Size = System::Drawing::Size(300, 200);
+			this->dataGridView1->TabIndex = 0;
 			// 
 			// label4
 			// 
@@ -107,6 +123,7 @@ namespace StudentMonitor {
 			this->homeButton->TabIndex = 14;
 			this->homeButton->Text = L"Home";
 			this->homeButton->UseVisualStyleBackColor = false;
+			this->homeButton->Click += gcnew System::EventHandler(this, &staffDashboard::homeButton_Click);
 			// 
 			// studentTrackerButton
 			// 
@@ -148,6 +165,7 @@ namespace StudentMonitor {
 			this->teachersButton->TabIndex = 17;
 			this->teachersButton->Text = L"Teachers";
 			this->teachersButton->UseVisualStyleBackColor = false;
+			this->teachersButton->Click += gcnew System::EventHandler(this, &staffDashboard::teachersButton_Click);
 			// 
 			// reportsButton
 			// 
@@ -168,6 +186,7 @@ namespace StudentMonitor {
 			this->BackgroundImage = (cli::safe_cast<System::Drawing::Image^>(resources->GetObject(L"$this.BackgroundImage")));
 			this->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Stretch;
 			this->ClientSize = System::Drawing::Size(550, 300);
+			this->Controls->Add(this->dataGridView1);
 			this->Controls->Add(this->reportsButton);
 			this->Controls->Add(this->teachersButton);
 			this->Controls->Add(this->logoutButton);
@@ -179,8 +198,8 @@ namespace StudentMonitor {
 			this->Icon = (cli::safe_cast<System::Drawing::Icon^>(resources->GetObject(L"$this.Icon")));
 			this->Name = L"staffDashboard";
 			this->StartPosition = System::Windows::Forms::FormStartPosition::CenterScreen;
-			this->Text = L"staffDashboard";
 			this->Load += gcnew System::EventHandler(this, &staffDashboard::staffDashboard_Load);
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView1))->EndInit();
 			this->ResumeLayout(false);
 			this->PerformLayout();
 
@@ -192,40 +211,86 @@ namespace StudentMonitor {
 	}
 private: System::Void logoutButton_Click(System::Object^ sender, System::EventArgs^ e) {
 	// should the user choose to logout, then they'll be presented with this message before termination
+
+	dataGridView1->Visible = false;
+
 	MessageBox::Show("Your session will now be terminated...", "Log Out", MessageBoxButtons::OK);
 	this->Close();
 }
 
 // will display all the students
 private: System::Void studentTrackerButton_Click(System::Object^ sender, System::EventArgs^ e) {
-
-	// open the database
+	// find database path
 	String^ connectionString = "Data Source=localhost\\sqlexpress;Initial Catalog=staff;Integrated Security=True;Encrypt=False;";
 	SqlConnection^ connection = gcnew SqlConnection(connectionString);
-	try
-	{
-		// open the database
-		connection->Open(); 
 
-		// initiating the query
+	try {
+		// Open the database
+		connection->Open();
+
+		// Initiate the query
 		SqlCommand^ command = gcnew SqlCommand("SELECT * FROM students", connection);
 
-		// executing the command
-		SqlDataReader^ reader = command->ExecuteReader();
+		// Execute the command
+		SqlDataAdapter^ dataAdapter = gcnew SqlDataAdapter(command);
+		DataTable^ dataTable = gcnew DataTable();
+		dataAdapter->Fill(dataTable);
 
-		while (reader->Read())
-		{
-			String^ studentName = reader->GetString(1);
-			MessageBox::Show("Student Name: " + studentName, "Student Information", MessageBoxButtons::OK);
+		// Bind the data to the DataGridView
+		dataGridView1->DataSource = dataTable;
+
+		dataGridView1->Visible = true;
+
+	}
+	catch (Exception^ ex) {
+		// Handle exceptions
+		MessageBox::Show("Database connection error: " + ex->Message, "SQL Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+	}
+	finally {
+		// Close the connection in the finally block
+		if (connection->State == ConnectionState::Open) {
+			connection->Close();
 		}
 	}
-	catch (Exception^ ex)
-	{
-		// bug catching
-		MessageBox::Show("SQL Error" + ex->Message, "Database connection error", MessageBoxButtons::OK);
-		return;
-	}
+}
+private: System::Void homeButton_Click(System::Object^ sender, System::EventArgs^ e) {
+	dataGridView1->Visible = false;
 
+}
+
+private: System::Void teachersButton_Click(System::Object^ sender, System::EventArgs^ e) {
+	// find database path
+	String^ connectionString = "Data Source=localhost\\sqlexpress;Initial Catalog=staff;Integrated Security=True;Encrypt=False;";
+	SqlConnection^ connection = gcnew SqlConnection(connectionString);
+
+	try {
+		// Open the database
+		connection->Open();
+
+		// Initiate the query
+		SqlCommand^ command = gcnew SqlCommand("SELECT staffName, staffSurname FROM staffMembers", connection);
+
+		// Execute the command
+		SqlDataAdapter^ dataAdapter = gcnew SqlDataAdapter(command);
+		DataTable^ dataTable = gcnew DataTable();
+		dataAdapter->Fill(dataTable);
+
+		// Bind the data to the DataGridView
+		dataGridView1->DataSource = dataTable;
+
+		dataGridView1->Visible = true;
+
+	}
+	catch (Exception^ ex) {
+		// Handle exceptions
+		MessageBox::Show("Database connection error: " + ex->Message, "SQL Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+	}
+	finally {
+		// Close the connection in the finally block
+		if (connection->State == ConnectionState::Open) {
+			connection->Close();
+		}
+	}
 }
 };
 }
