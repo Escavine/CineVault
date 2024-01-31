@@ -1,41 +1,32 @@
-#include "StudentMonitorMenu.h"
+// UI header logic
+#include "StaffLogin.h"
+#include "staffDashboard.h"
 
 using namespace System;
 using namespace System::Windows::Forms;
 
-[STAThreadAttribute]
 void main(array<String^>^ args)
 {
     Application::EnableVisualStyles();
     Application::SetCompatibleTextRenderingDefault(false);
 
-    bool showMenu = true;  // Set this condition based on your logic
+    // load the login section first for authentication
+    StudentMonitor::StaffLogin staffLogin;
+    staffLogin.ShowDialog();
 
-    if (showMenu)
+    User^ user = staffLogin.user;
+
+    if (user != nullptr)
     {
-        StudentMonitor::StudentMonitorMenu form;
-        Application::Run(% form);
+        // should the users login attempt be successful, direct them to the dashboard
+        MessageBox::Show("Authentication success! " + user->name, "Login Success", MessageBoxButtons::OK);
+        StudentMonitor::staffDashboard staffDash;
+        staffDash.ShowDialog();
     }
     else
     {
-        try
-        {
-            StudentMonitor::StaffLogin staffLogin;
-            staffLogin.ShowDialog();
-            User^ user = staffLogin.user;  // Adjust this line based on your implementation
-
-            if (user != nullptr)
-            {
-                MessageBox::Show("Successful authentication of " + user->name, "StaffLogin.cpp", MessageBoxButtons::OK);
-            }
-            else
-            {
-                MessageBox::Show("Authentication failed", "StaffLogin.cpp", MessageBoxButtons::OK);
-            }
-        }
-        catch (Exception^ ex)
-        {
-            MessageBox::Show("Error: " + ex->Message, "Error", MessageBoxButtons::OK);
-        }
+        // otherwise output failure if the details aren't matched with the ones saved in the database
+        MessageBox::Show("Authentication failed! ", "Login Failed", MessageBoxButtons::OK);
     }
-}
+ }
+
