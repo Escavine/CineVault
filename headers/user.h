@@ -2,7 +2,7 @@
 
 using namespace System;
 
-// defining the user
+// defining the staff user
 public ref class User {
 public:
 	int id;

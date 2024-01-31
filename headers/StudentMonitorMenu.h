@@ -1,5 +1,8 @@
 #pragma once
-#include "StudentMonitorMenu.h"
+
+#ifndef STUDENTMONITORMENU
+#define STUDENTMONITORMENU
+
 #include "StaffLogin.h"
 
 namespace StudentMonitor {
@@ -39,7 +42,10 @@ namespace StudentMonitor {
 	private: System::Windows::Forms::Label^ label1;
 	private: System::Windows::Forms::Label^ label4;
 	private: System::Windows::Forms::Button^ button2;
-	private: System::Windows::Forms::Button^ button3;
+	private: System::Windows::Forms::Button^ buttonOK;
+	private: System::Windows::Forms::ContextMenuStrip^ contextMenuStrip1;
+	private: System::ComponentModel::IContainer^ components;
+
 
 	protected:
 
@@ -47,7 +53,7 @@ namespace StudentMonitor {
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
-		System::ComponentModel::Container^ components;
+
 
 
 #pragma region Windows Form Designer generated code
@@ -57,11 +63,13 @@ namespace StudentMonitor {
 		/// </summary>
 		void InitializeComponent(void)
 		{
+			this->components = (gcnew System::ComponentModel::Container());
 			System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(StudentMonitorMenu::typeid));
 			this->label1 = (gcnew System::Windows::Forms::Label());
 			this->label4 = (gcnew System::Windows::Forms::Label());
 			this->button2 = (gcnew System::Windows::Forms::Button());
-			this->button3 = (gcnew System::Windows::Forms::Button());
+			this->buttonOK = (gcnew System::Windows::Forms::Button());
+			this->contextMenuStrip1 = (gcnew System::Windows::Forms::ContextMenuStrip(this->components));
 			this->SuspendLayout();
 			// 
 			// label1
@@ -104,26 +112,31 @@ namespace StudentMonitor {
 			this->button2->UseVisualStyleBackColor = false;
 			this->button2->Click += gcnew System::EventHandler(this, &StudentMonitorMenu::button2_Click);
 			// 
-			// button3
+			// buttonOK
 			// 
-			this->button3->BackColor = System::Drawing::Color::Black;
-			this->button3->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
-			this->button3->Font = (gcnew System::Drawing::Font(L"Segoe UI", 10));
-			this->button3->ForeColor = System::Drawing::Color::White;
-			this->button3->Location = System::Drawing::Point(119, 175);
-			this->button3->Name = L"button3";
-			this->button3->Size = System::Drawing::Size(124, 34);
-			this->button3->TabIndex = 14;
-			this->button3->Text = L"Staff Login";
-			this->button3->UseVisualStyleBackColor = false;
-			this->button3->Click += gcnew System::EventHandler(this, &StudentMonitorMenu::button3_Click);
+			this->buttonOK->BackColor = System::Drawing::Color::Black;
+			this->buttonOK->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->buttonOK->Font = (gcnew System::Drawing::Font(L"Segoe UI", 10));
+			this->buttonOK->ForeColor = System::Drawing::Color::White;
+			this->buttonOK->Location = System::Drawing::Point(119, 175);
+			this->buttonOK->Name = L"buttonOK";
+			this->buttonOK->Size = System::Drawing::Size(124, 34);
+			this->buttonOK->TabIndex = 14;
+			this->buttonOK->Text = L"Staff Login";
+			this->buttonOK->UseVisualStyleBackColor = false;
+			this->buttonOK->Click += gcnew System::EventHandler(this, &StudentMonitorMenu::buttonOK_Click);
+			// 
+			// contextMenuStrip1
+			// 
+			this->contextMenuStrip1->Name = L"contextMenuStrip1";
+			this->contextMenuStrip1->Size = System::Drawing::Size(61, 4);
 			// 
 			// StudentMonitorMenu
 			// 
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::None;
 			this->BackgroundImage = (cli::safe_cast<System::Drawing::Image^>(resources->GetObject(L"$this.BackgroundImage")));
 			this->ClientSize = System::Drawing::Size(546, 300);
-			this->Controls->Add(this->button3);
+			this->Controls->Add(this->buttonOK);
 			this->Controls->Add(this->button2);
 			this->Controls->Add(this->label4);
 			this->Controls->Add(this->label1);
@@ -139,13 +152,19 @@ namespace StudentMonitor {
 #pragma endregion
 	private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ e) {
 	}
-	private: System::Void button3_Click(System::Object^ sender, System::EventArgs^ e) {
-		this->Hide();
-		StaffLogin^ staffLoginForm = gcnew StaffLogin();
-		staffLoginForm->Show();
+	private: System::Void buttonOK_Click(System::Object^ sender, System::EventArgs^ e) {
+		// Perform any necessary actions before closing the form
+
+		// Set the DialogResult property to OK
+		this->DialogResult = System::Windows::Forms::DialogResult::OK;
+
+		// Close the form
+		this->Close();
 	}
 
 	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
 	}
 	};
 }
+
+#endif // define the menu
